@@ -20,7 +20,9 @@ const NotificationsPage = () => {
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-semibold">{notification.title}</h3>
-                  <span className="text-sm text-gray-500">{notification.time}</span>
+                  <span className="text-sm text-gray-500">
+                    {new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
                 <p className="text-gray-600 text-sm">{notification.message}</p>
                 {!notification.read && (

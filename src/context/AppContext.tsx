@@ -22,18 +22,13 @@ interface AppContextType {
   toggleFavorite: (productId: string) => Promise<void>;
   isFavorite: (productId:string) => boolean;
   updateProfile: (data: { address?: string; full_name?: string }) => Promise<void>;
-  markNotificationAsRead: (id: number) => void;
+  markNotificationAsRead: (id: string) => Promise<void>;
   getUnreadNotificationCount: () => number;
   sendMessage: (message: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-const initialNotifications: Notification[] = [
-  { id: 1, title: 'Pedido confirmado!', message: 'Seu gás será entregue em breve', time: '2 min', read: false },
-  { id: 2, title: 'Promoção especial', message: 'Frete grátis hoje!', time: '1h', read: false }
-];
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -42,49 +37,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-  const fetchOrders = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+  const fetchInitialData = async (userId: string) => {
+    const [ordersRes, favoritesRes, chatMessagesRes, notificationsRes] = await Promise.all([
+      supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      supabase.from('favorites').select('product_id').eq('user_id', userId),
+      supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
+      supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    ]);
 
-    if (error) {
-      showError('Não foi possível carregar seus pedidos.');
-    } else {
-      setOrders(data as Order[]);
-    }
-  };
+    if (ordersRes.error) showError('Não foi possível carregar seus pedidos.');
+    else setOrders(ordersRes.data as Order[]);
 
-  const fetchFavorites = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('favorites')
-      .select('product_id')
-      .eq('user_id', userId);
+    if (favoritesRes.error) showError('Não foi possível carregar seus favoritos.');
+    else setFavorites(favoritesRes.data.map(fav => fav.product_id));
 
-    if (error) {
-      showError('Não foi possível carregar seus favoritos.');
-    } else {
-      const favoriteIds = data.map(fav => fav.product_id);
-      setFavorites(favoriteIds);
-    }
-  };
+    if (chatMessagesRes.error) showError('Não foi possível carregar o histórico de chat.');
+    else setChatMessages(chatMessagesRes.data as ChatMessage[]);
 
-  const fetchChatMessages = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      showError('Não foi possível carregar o histórico de chat.');
-    } else {
-      setChatMessages(data as ChatMessage[]);
-    }
+    if (notificationsRes.error) showError('Não foi possível carregar as notificações.');
+    else setNotifications(notificationsRes.data as Notification[]);
   };
 
   useEffect(() => {
@@ -104,14 +78,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           .eq('id', session.user.id)
           .single();
         
-        if (profileError) {
-          showError(profileError.message);
-        } else {
-          setProfile(data);
-        }
-        await fetchOrders(session.user.id);
-        await fetchFavorites(session.user.id);
-        await fetchChatMessages(session.user.id);
+        if (profileError) showError(profileError.message);
+        else setProfile(data);
+        
+        await fetchInitialData(session.user.id);
       }
       setLoading(false);
     };
@@ -126,6 +96,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setOrders([]);
         setFavorites([]);
         setChatMessages([]);
+        setNotifications([]);
       }
     });
 
@@ -134,71 +105,68 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const channel = supabase.channel(`notifications:${session.user.id}`)
+      .on<Notification>(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` },
+        (payload) => {
+          setNotifications(prev => [payload.new, ...prev]);
+          showSuccess(payload.new.title);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session]);
+
   const updateProfile = async (data: { address?: string; full_name?: string }) => {
     if (!session?.user) throw new Error('Usuário não logado');
     
-    const updates = {
-      id: session.user.id,
-      ...data,
-      updated_at: new Date().toISOString(),
-    };
-
+    const updates = { id: session.user.id, ...data, updated_at: new Date().toISOString() };
     const { error } = await supabase.from('profiles').upsert(updates);
 
-    if (error) {
-      showError(error.message);
-    } else {
+    if (error) showError(error.message);
+    else {
       setProfile(prev => ({ ...prev!, ...updates }));
       showSuccess("Endereço salvo!");
     }
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const signOut = async () => { await supabase.auth.signOut(); };
 
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
-        return prev.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
       return [...prev, { ...product, quantity: 1 }];
     });
     showSuccess(`${product.name} adicionado ao carrinho!`);
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.id !== productId));
-  };
+  const removeFromCart = (productId: string) => { setCart(prev => prev.filter(item => item.id !== productId)); };
 
   const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
     }
-    setCart(prev =>
-      prev.map(item => item.id === productId ? { ...item, quantity } : item)
-    );
+    setCart(prev => prev.map(item => item.id === productId ? { ...item, quantity } : item));
   };
 
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-  
-  const getCartItemCount = () => {
-    return cart.reduce((sum, item) => sum + item.quantity, 0);
-  };
+  const getCartTotal = () => cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const getCartItemCount = () => cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const placeOrder = async () => {
-    if (!profile?.address) {
-        return "Por favor, informe seu endereço para continuar.";
-    }
-    if (!session?.user) {
-        return "Você precisa estar logado para fazer um pedido.";
-    }
+    if (!profile?.address) return "Por favor, informe seu endereço para continuar.";
+    if (!session?.user) return "Você precisa estar logado para fazer um pedido.";
+    
     const total = getCartTotal();
     const deliveryFee = total >= 80 ? 0 : 8;
     const finalTotal = total + deliveryFee;
@@ -208,19 +176,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       items: cart,
       total: finalTotal,
       address: profile.address,
-      status: 'preparing',
+      status: 'preparing' as const,
       estimated_time: '45 min'
     };
 
-    const { error } = await supabase.from('orders').insert([newOrder]);
+    const { data: orderData, error } = await supabase.from('orders').insert(newOrder).select().single();
 
     if (error) {
       showError("Erro ao registrar o pedido.");
       return "Ocorreu um erro. Tente novamente.";
     }
 
+    setOrders(prev => [orderData, ...prev]);
     setCart([]);
-    await fetchOrders(session.user.id);
+    
+    // Create notification for the new order
+    const notification = {
+      user_id: session.user.id,
+      title: 'Pedido Confirmado!',
+      message: `Seu pedido #${orderData.id.slice(-6)} está sendo preparado.`
+    };
+    await supabase.from('notifications').insert(notification);
+
     return null;
   };
 
@@ -229,37 +206,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       showError('Você precisa estar logado para favoritar produtos.');
       return;
     }
-  
     const isCurrentlyFavorite = favorites.includes(productId);
-    
     if (isCurrentlyFavorite) {
-      const { error } = await supabase
-        .from('favorites')
-        .delete()
-        .match({ user_id: session.user.id, product_id: productId });
-  
-      if (error) {
-        showError('Não foi possível remover o favorito.');
-      } else {
-        setFavorites(prev => prev.filter(id => id !== productId));
-      }
+      const { error } = await supabase.from('favorites').delete().match({ user_id: session.user.id, product_id: productId });
+      if (error) showError('Não foi possível remover o favorito.');
+      else setFavorites(prev => prev.filter(id => id !== productId));
     } else {
-      const { error } = await supabase
-        .from('favorites')
-        .insert([{ user_id: session.user.id, product_id: productId }]);
-  
-      if (error) {
-        showError('Não foi possível adicionar o favorito.');
-      } else {
-        setFavorites(prev => [...prev, productId]);
-      }
+      const { error } = await supabase.from('favorites').insert([{ user_id: session.user.id, product_id: productId }]);
+      if (error) showError('Não foi possível adicionar o favorito.');
+      else setFavorites(prev => [...prev, productId]);
     }
   };
 
   const isFavorite = (productId: string) => favorites.includes(productId);
 
-  const markNotificationAsRead = (id: number) => {
+  const markNotificationAsRead = async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
+    if (error) {
+      showError('Não foi possível marcar a notificação como lida.');
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
+    }
   };
 
   const getUnreadNotificationCount = () => notifications.filter(n => !n.read).length;
@@ -269,24 +236,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       showError('Você precisa estar logado para enviar mensagens.');
       return;
     }
-
-    const userMessage = {
-      user_id: session.user.id,
-      message,
-      sender: 'user' as const,
-    };
-
-    const { data: newUserMessage, error: userError } = await supabase
-      .from('chat_messages')
-      .insert(userMessage)
-      .select()
-      .single();
-
+    const userMessage = { user_id: session.user.id, message, sender: 'user' as const };
+    const { data: newUserMessage, error: userError } = await supabase.from('chat_messages').insert(userMessage).select().single();
     if (userError) {
       showError('Não foi possível enviar sua mensagem.');
       return;
     }
-
     setChatMessages(prev => [...prev, newUserMessage as ChatMessage]);
 
     setTimeout(async () => {
@@ -296,50 +251,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         'Sua mensagem foi recebida. Nossa equipe já está cuidando do seu caso.'
       ];
       const supportMessageText = responses[Math.floor(Math.random() * responses.length)];
-
-      const supportMessage = {
-        user_id: session.user.id,
-        message: supportMessageText,
-        sender: 'support' as const,
-      };
-
-      const { data: newSupportMessage, error: supportError } = await supabase
-        .from('chat_messages')
-        .insert(supportMessage)
-        .select()
-        .single();
-
-      if (supportError) {
-        console.error("Falha ao inserir a resposta automática do suporte:", supportError);
-        return;
-      }
-      
+      const supportMessage = { user_id: session.user.id, message: supportMessageText, sender: 'support' as const };
+      const { data: newSupportMessage, error: supportError } = await supabase.from('chat_messages').insert(supportMessage).select().single();
+      if (supportError) return;
       setChatMessages(prev => [...prev, newSupportMessage as ChatMessage]);
     }, 2000);
   };
 
   const value = {
-    session,
-    profile,
-    loading,
-    cart,
-    orders,
-    favorites,
-    notifications,
-    chatMessages,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    getCartTotal,
-    getCartItemCount,
-    placeOrder,
-    toggleFavorite,
-    isFavorite,
-    updateProfile,
-    markNotificationAsRead,
-    getUnreadNotificationCount,
-    sendMessage,
-    signOut,
+    session, profile, loading, cart, orders, favorites, notifications, chatMessages,
+    addToCart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount,
+    placeOrder, toggleFavorite, isFavorite, updateProfile, markNotificationAsRead,
+    getUnreadNotificationCount, sendMessage, signOut,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -347,8 +270,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
+  if (context === undefined) throw new Error('useApp must be used within an AppProvider');
   return context;
 };

@@ -29,11 +29,12 @@ export interface Order {
 }
 
 export interface Notification {
-  id: number;
+  id: string;
+  user_id: string;
   title: string;
   message: string;
-  time: string;
   read: boolean;
+  created_at: string;
 }
 
 export interface ChatMessage {
