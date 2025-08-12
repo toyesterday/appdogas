@@ -56,6 +56,7 @@ const SettingsAdmin = () => {
 
     if (error) {
       showError("Falha ao salvar configurações.");
+      console.error("Falha ao salvar configurações:", error);
     } else {
       showSuccess("Configurações salvas com sucesso!");
     }
