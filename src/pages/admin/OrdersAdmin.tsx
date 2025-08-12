@@ -22,14 +22,15 @@ const OrdersAdmin = () => {
 
   const fetchOrders = async () => {
     setLoading(true);
+    // Fix: Made the join between orders and profiles explicit by specifying the foreign key column `user_id`.
     const { data, error } = await supabase
       .from('orders')
-      .select('*, profile:profiles(full_name)')
+      .select('*, profile:profiles!user_id(full_name)')
       .order('created_at', { ascending: false });
 
     if (error) {
       showError('Falha ao carregar pedidos.');
-      console.error(error);
+      console.error('Error fetching orders:', error);
     } else {
       const typedData = data as (Order & { profile: { full_name: string } | null })[];
       
