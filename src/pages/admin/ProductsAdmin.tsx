@@ -6,10 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { showError, showSuccess } from '@/utils/toast';
+import ProductFormDialog from '@/components/admin/ProductFormDialog';
 
 const ProductsAdmin = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -37,11 +40,21 @@ const ProductsAdmin = () => {
     }
   };
 
+  const handleAddNew = () => {
+    setEditingProduct(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setIsDialogOpen(true);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Gerenciar Produtos</h1>
-        <Button>
+        <Button onClick={handleAddNew}>
           <PlusCircle className="w-4 h-4 mr-2" />
           Adicionar Produto
         </Button>
@@ -75,7 +88,7 @@ const ProductsAdmin = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(product)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDelete(product.id)} className="text-red-600">
                           Excluir
                         </DropdownMenuItem>
@@ -88,6 +101,12 @@ const ProductsAdmin = () => {
           </TableBody>
         </Table>
       </div>
+      <ProductFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSuccess={fetchProducts}
+        product={editingProduct}
+      />
     </div>
   );
 };

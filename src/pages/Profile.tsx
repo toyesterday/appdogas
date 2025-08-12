@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { User, MapPin, CreditCard, Star, Bell, Phone, LogOut, Edit, Check } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,11 @@ const ProfilePage = () => {
   const [fullName, setFullName] = useState(profile?.full_name || '');
 
   const menuItems = [
-    { icon: MapPin, label: 'Meus Endereços' },
-    { icon: CreditCard, label: 'Formas de Pagamento' },
-    { icon: Star, label: 'Avaliar App' },
-    { icon: Bell, label: 'Notificações' },
-    { icon: Phone, label: 'Suporte' },
+    { icon: MapPin, label: 'Meus Endereços', path: '#', disabled: true },
+    { icon: CreditCard, label: 'Formas de Pagamento', path: '#', disabled: true },
+    { icon: Star, label: 'Avaliar App', path: '#', disabled: true },
+    { icon: Bell, label: 'Notificações', path: '/notifications', disabled: false },
+    { icon: Phone, label: 'Suporte', path: '/support', disabled: false },
   ];
 
   const handleSaveName = async () => {
@@ -66,15 +66,31 @@ const ProfilePage = () => {
 
       <Card>
         <CardContent className="p-4">
-          {menuItems.map((item, index) => (
-            <div key={item.label} className={`flex items-center justify-between py-3 ${index < menuItems.length - 1 ? 'border-b' : ''}`}>
-              <div className="flex items-center space-x-3">
-                <item.icon className="w-5 h-5 text-gray-500" />
-                <span>{item.label}</span>
+          {menuItems.map((item, index) => {
+            const itemContent = (
+              <div className={`flex items-center justify-between py-3 ${index < menuItems.length - 1 ? 'border-b' : ''}`}>
+                <div className="flex items-center space-x-3">
+                  <item.icon className="w-5 h-5 text-gray-500" />
+                  <span>{item.label}</span>
+                </div>
+                <span className="text-gray-400">›</span>
               </div>
-              <span className="text-gray-400">›</span>
-            </div>
-          ))}
+            );
+
+            if (item.disabled) {
+              return (
+                <div key={item.label} className="opacity-50 cursor-not-allowed">
+                  {itemContent}
+                </div>
+              );
+            }
+
+            return (
+              <Link to={item.path} key={item.label} className="block hover:bg-gray-50">
+                {itemContent}
+              </Link>
+            );
+          })}
         </CardContent>
       </Card>
 
