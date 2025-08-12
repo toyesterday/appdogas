@@ -19,7 +19,7 @@ interface AppContextType {
   getCartTotal: () => number;
   getCartItemCount: () => number;
   placeOrder: () => Promise<string | null>;
-  toggleFavorite: (productId: string) => void;
+  toggleFavorite: (productId: string) => Promise<void>;
   isFavorite: (productId:string) => boolean;
   updateProfile: (data: { address?: string; full_name?: string }) => Promise<void>;
   markNotificationAsRead: (id: number) => void;
@@ -63,6 +63,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const fetchFavorites = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('favorites')
+      .select('product_id')
+      .eq('user_id', userId);
+
+    if (error) {
+      showError('Não foi possível carregar seus favoritos.');
+    } else {
+      const favoriteIds = data.map(fav => fav.product_id);
+      setFavorites(favoriteIds);
+    }
+  };
+
   useEffect(() => {
     const setData = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -86,6 +100,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setProfile(data);
         }
         await fetchOrders(session.user.id);
+        await fetchFavorites(session.user.id);
       }
       setLoading(false);
     };
@@ -98,6 +113,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (_event === 'SIGNED_OUT') {
         setProfile(null);
         setOrders([]);
+        setFavorites([]);
       }
     });
 
@@ -196,10 +212,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return null;
   };
 
-  const toggleFavorite = (productId: string) => {
-    setFavorites(prev =>
-      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
-    );
+  const toggleFavorite = async (productId: string) => {
+    if (!session?.user) {
+      showError('Você precisa estar logado para favoritar produtos.');
+      return;
+    }
+  
+    const isCurrentlyFavorite = favorites.includes(productId);
+    
+    if (isCurrentlyFavorite) {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .match({ user_id: session.user.id, product_id: productId });
+  
+      if (error) {
+        showError('Não foi possível remover o favorito.');
+      } else {
+        setFavorites(prev => prev.filter(id => id !== productId));
+      }
+    } else {
+      const { error } = await supabase
+        .from('favorites')
+        .insert([{ user_id: session.user.id, product_id: productId }]);
+  
+      if (error) {
+        showError('Não foi possível adicionar o favorito.');
+      } else {
+        setFavorites(prev => [...prev, productId]);
+      }
+    }
   };
 
   const isFavorite = (productId: string) => favorites.includes(productId);
