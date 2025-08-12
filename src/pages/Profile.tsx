@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, MapPin, CreditCard, Star, Bell, Phone, LogOut, Edit, Check } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input';
 
 const ProfilePage = () => {
   const { orders, favorites, profile, session, signOut, updateProfile } = useApp();
+  const navigate = useNavigate();
   const [isEditingName, setIsEditingName] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
 
@@ -23,6 +25,11 @@ const ProfilePage = () => {
       await updateProfile({ full_name: fullName });
     }
     setIsEditingName(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
   };
 
   return (
@@ -91,7 +98,7 @@ const ProfilePage = () => {
         </CardContent>
       </Card>
 
-      <Button variant="outline" className="w-full" onClick={signOut}>
+      <Button variant="outline" className="w-full" onClick={handleSignOut}>
         <LogOut className="w-4 h-4 mr-2" />
         Sair da Conta
       </Button>
