@@ -24,7 +24,7 @@ interface AppContextType {
   updateProfile: (data: { address?: string; full_name?: string }) => Promise<void>;
   markNotificationAsRead: (id: number) => void;
   getUnreadNotificationCount: () => number;
-  sendMessage: (message: string) => void;
+  sendMessage: (message: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -35,10 +35,6 @@ const initialNotifications: Notification[] = [
   { id: 2, title: 'Promoção especial', message: 'Frete grátis hoje!', time: '1h', read: false }
 ];
 
-const initialChatMessages: ChatMessage[] = [
-  { id: 1, message: 'Olá! Como posso ajudar?', sender: 'support', time: new Date() }
-];
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -47,7 +43,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const fetchOrders = async (userId: string) => {
     const { data, error } = await supabase
@@ -77,6 +73,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const fetchChatMessages = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      showError('Não foi possível carregar o histórico de chat.');
+    } else {
+      setChatMessages(data as ChatMessage[]);
+    }
+  };
+
   useEffect(() => {
     const setData = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -101,6 +111,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
         await fetchOrders(session.user.id);
         await fetchFavorites(session.user.id);
+        await fetchChatMessages(session.user.id);
       }
       setLoading(false);
     };
@@ -114,6 +125,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setProfile(null);
         setOrders([]);
         setFavorites([]);
+        setChatMessages([]);
       }
     });
 
@@ -252,23 +264,57 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const getUnreadNotificationCount = () => notifications.filter(n => !n.read).length;
 
-  const sendMessage = (message: string) => {
-    const newMessage: ChatMessage = { id: Date.now(), message, sender: 'user', time: new Date() };
-    setChatMessages(prev => [...prev, newMessage]);
+  const sendMessage = async (message: string) => {
+    if (!session?.user) {
+      showError('Você precisa estar logado para enviar mensagens.');
+      return;
+    }
 
-    setTimeout(() => {
+    const userMessage = {
+      user_id: session.user.id,
+      message,
+      sender: 'user' as const,
+    };
+
+    const { data: newUserMessage, error: userError } = await supabase
+      .from('chat_messages')
+      .insert(userMessage)
+      .select()
+      .single();
+
+    if (userError) {
+      showError('Não foi possível enviar sua mensagem.');
+      return;
+    }
+
+    setChatMessages(prev => [...prev, newUserMessage as ChatMessage]);
+
+    setTimeout(async () => {
       const responses = [
         'Obrigado pela mensagem! Em breve um atendente entrará em contato.',
         'Estamos verificando sua solicitação. Aguarde um momento.',
         'Sua mensagem foi recebida. Nossa equipe já está cuidando do seu caso.'
       ];
-      const autoResponse: ChatMessage = {
-        id: Date.now() + 1,
-        message: responses[Math.floor(Math.random() * responses.length)],
-        sender: 'support',
-        time: new Date()
+      const supportMessageText = responses[Math.floor(Math.random() * responses.length)];
+
+      const supportMessage = {
+        user_id: session.user.id,
+        message: supportMessageText,
+        sender: 'support' as const,
       };
-      setChatMessages(prev => [...prev, autoResponse]);
+
+      const { data: newSupportMessage, error: supportError } = await supabase
+        .from('chat_messages')
+        .insert(supportMessage)
+        .select()
+        .single();
+
+      if (supportError) {
+        console.error("Falha ao inserir a resposta automática do suporte:", supportError);
+        return;
+      }
+      
+      setChatMessages(prev => [...prev, newSupportMessage as ChatMessage]);
     }, 2000);
   };
 

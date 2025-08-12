@@ -37,10 +37,11 @@ export interface Notification {
 }
 
 export interface ChatMessage {
-  id: number;
+  id: string;
+  user_id: string;
   message: string;
   sender: 'user' | 'support';
-  time: Date;
+  created_at: string;
 }
 
 export interface Profile {

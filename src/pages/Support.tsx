@@ -7,6 +7,7 @@ import { Send } from 'lucide-react';
 const SupportPage = () => {
   const { chatMessages, sendMessage } = useApp();
   const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -15,10 +16,13 @@ const SupportPage = () => {
 
   useEffect(scrollToBottom, [chatMessages]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      sendMessage(newMessage);
+  const handleSendMessage = async () => {
+    if (newMessage.trim() && !isSending) {
+      setIsSending(true);
+      const messageToSend = newMessage;
       setNewMessage('');
+      await sendMessage(messageToSend);
+      setIsSending(false);
     }
   };
 
@@ -35,7 +39,7 @@ const SupportPage = () => {
               }`}>
                 <p>{msg.message}</p>
                 <p className="text-xs opacity-75 mt-1 text-right">
-                  {msg.time.toLocaleTimeString().slice(0, 5)}
+                  {new Date(msg.created_at).toLocaleTimeString().slice(0, 5)}
                 </p>
               </div>
             </div>
@@ -52,8 +56,9 @@ const SupportPage = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Digite sua mensagem..."
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            disabled={isSending}
           />
-          <Button onClick={handleSendMessage} size="icon">
+          <Button onClick={handleSendMessage} size="icon" disabled={isSending}>
             <Send className="w-4 h-4" />
           </Button>
         </div>
