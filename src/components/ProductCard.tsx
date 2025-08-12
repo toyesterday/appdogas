@@ -36,7 +36,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       
       <CardContent className="p-4">
         <div className="flex items-start space-x-4">
-          <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
+          <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
             {product.image && product.image.startsWith('/') ? (
               <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
             ) : (
