@@ -6,8 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { showError, showSuccess } from '@/utils/toast';
 
+// Define um tipo mais específico para os pedidos nesta página, incluindo o nome do cliente.
+type AdminOrder = Order & {
+  user_name: string;
+};
+
 const OrdersAdmin = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
@@ -21,9 +26,15 @@ const OrdersAdmin = () => {
       showError('Falha ao carregar pedidos.');
       console.error(error);
     } else {
-      // Supabase returns profile as an object, let's flatten it
-      const formattedData = data.map(d => ({...d, user_name: (d.profile as any)?.full_name || 'N/A' }))
-      setOrders(formattedData as any);
+      // Tipagem para garantir que o Supabase retornou o que esperamos
+      const typedData = data as (Order & { profile: { full_name: string } | null })[];
+      
+      // Formata os dados para incluir o nome do usuário de forma segura
+      const formattedData: AdminOrder[] = typedData.map(d => ({
+        ...d,
+        user_name: d.profile?.full_name || 'N/A'
+      }));
+      setOrders(formattedData);
     }
     setLoading(false);
   };
@@ -67,7 +78,7 @@ const OrdersAdmin = () => {
               orders.map(order => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono">#{order.id.slice(-6)}</TableCell>
-                  <TableCell>{(order as any).user_name}</TableCell>
+                  <TableCell>{order.user_name}</TableCell>
                   <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
                   <TableCell>
