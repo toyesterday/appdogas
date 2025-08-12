@@ -11,7 +11,8 @@ export const products: Product[] = [
     brand: 'Ultragaz',
     rating: 4.8,
     reviews: 230,
-    promotion: '10% OFF'
+    promotion: '10% OFF',
+    featured: true,
   },
   {
     id: 2,
@@ -45,7 +46,8 @@ export const products: Product[] = [
     brand: 'Ultragaz',
     rating: 4.9,
     reviews: 78,
-    promotion: null
+    promotion: null,
+    featured: true,
   },
   {
     id: 5,

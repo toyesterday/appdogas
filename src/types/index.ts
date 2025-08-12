@@ -9,6 +9,7 @@ export interface Product {
   rating: number;
   reviews: number;
   promotion?: string | null;
+  featured?: boolean;
 }
 
 export interface CartItem extends Product {

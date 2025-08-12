@@ -15,9 +15,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Card className="overflow-hidden relative">
-      {product.promotion && (
-        <Badge variant="destructive" className="absolute top-3 left-3">{product.promotion}</Badge>
-      )}
+      <div className="absolute top-3 left-3 flex flex-col space-y-1">
+        {product.featured && (
+          <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
+            <Star className="w-3 h-3 mr-1" /> Destaque
+          </Badge>
+        )}
+        {product.promotion && (
+          <Badge variant="destructive">{product.promotion}</Badge>
+        )}
+      </div>
       <Button
         variant="ghost"
         size="icon"

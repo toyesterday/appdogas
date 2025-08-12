@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Clock, Phone, Search, Filter } from 'lucide-react';
+import { MapPin, Clock, Phone, Search, Filter, Star } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { products as allProducts } from '@/data/products';
 import ProductCard from '@/components/ProductCard';
@@ -17,6 +17,9 @@ const Index = () => {
     const matchesBrand = selectedBrand === 'all' || product.brand === selectedBrand;
     return matchesSearch && matchesBrand;
   });
+
+  const featuredProducts = filteredProducts.filter(p => p.featured);
+  const regularProducts = filteredProducts.filter(p => !p.featured);
 
   const brands = ['all', ...Array.from(new Set(allProducts.map(p => p.brand)))];
 
@@ -76,6 +79,20 @@ const Index = () => {
         </div>
       </div>
 
+      {featuredProducts.length > 0 && (
+        <div className="p-4">
+          <h2 className="text-lg font-bold mb-4 flex items-center">
+            <Star className="w-5 h-5 mr-2 text-yellow-500" />
+            Destaques
+          </h2>
+          <div className="grid gap-4">
+            {featuredProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-yellow-100 border border-yellow-300 p-4 m-4 rounded-lg">
         <div className="flex items-center space-x-2">
           <span className="text-2xl">🎉</span>
@@ -89,7 +106,7 @@ const Index = () => {
       <div className="p-4">
         <h2 className="text-lg font-bold mb-4">Produtos disponíveis</h2>
         <div className="grid gap-4">
-          {filteredProducts.map(product => (
+          {regularProducts.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
