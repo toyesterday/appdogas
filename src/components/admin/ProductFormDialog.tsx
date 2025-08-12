@@ -29,7 +29,7 @@ import { showError, showSuccess } from '@/utils/toast';
 
 const productFormSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
-  brand: z.string().min(2, { message: "A marca deve ter pelo menos 2 caracteres." }),
+  brand: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }),
   originalPrice: z.coerce.number().positive({ message: "O preço original deve ser um número positivo." }).optional().nullable(),
@@ -74,7 +74,7 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
           originalPrice: product.originalPrice,
           image: product.image,
           promotion: product.promotion,
-          featured: product.featured,
+          featured: !!product.featured,
         });
       } else {
         form.reset(form.formState.defaultValues);
@@ -129,7 +129,7 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Marca</FormLabel>
-                  <FormControl><Input placeholder="Supergásbras" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Supergásbras" {...field} value={field.value ?? ''} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}

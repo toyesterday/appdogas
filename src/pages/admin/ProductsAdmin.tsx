@@ -19,6 +19,7 @@ const ProductsAdmin = () => {
     const { data, error } = await supabase.from('products').select('*').order('name');
     if (error) {
       showError('Falha ao carregar produtos.');
+      console.error('Error fetching products:', error);
     } else {
       setProducts(data);
     }

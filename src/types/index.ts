@@ -2,14 +2,14 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  originalPrice?: number;
-  image: string;
-  description: string;
-  brand: string;
-  rating: number;
-  reviews: number;
-  promotion?: string | null;
-  featured?: boolean;
+  originalPrice: number | null;
+  image: string | null;
+  description: string | null;
+  brand: string | null;
+  rating: number | null;
+  reviews: number | null;
+  promotion: string | null;
+  featured: boolean | null;
   created_at: string;
 }
 

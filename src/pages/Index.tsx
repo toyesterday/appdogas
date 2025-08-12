@@ -55,7 +55,7 @@ const Index = () => {
 
   const filteredProducts = allProducts.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.brand.toLowerCase().includes(searchTerm.toLowerCase());
+                         (product.brand || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesBrand = selectedBrand === 'all' || product.brand === selectedBrand;
     return matchesSearch && matchesBrand;
   });
@@ -63,7 +63,7 @@ const Index = () => {
   const featuredProducts = filteredProducts.filter(p => p.featured);
   const regularProducts = filteredProducts.filter(p => !p.featured);
 
-  const brands = ['all', ...Array.from(new Set(allProducts.map(p => p.brand)))];
+  const brands = ['all', ...Array.from(new Set(allProducts.map(p => p.brand).filter(Boolean) as string[]))];
 
   if (loading) {
     return (
