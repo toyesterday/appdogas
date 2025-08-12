@@ -1,15 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, Clock, Phone, Search, Filter, Star } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { products as allProducts } from '@/data/products';
+import { Product } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import ProductCard from '@/components/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
   const { userAddress, setUserAddress } = useApp();
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        setError('Não foi possível carregar os produtos. Tente novamente mais tarde.');
+      } else {
+        setAllProducts(data as Product[]);
+      }
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = allProducts.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -22,6 +47,37 @@ const Index = () => {
   const regularProducts = filteredProducts.filter(p => !p.featured);
 
   const brands = ['all', ...Array.from(new Set(allProducts.map(p => p.brand)))];
+
+  if (loading) {
+    return (
+      <div className="p-4 max-w-4xl mx-auto space-y-4">
+        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg">
+          <Skeleton className="h-10 w-full bg-white/20" />
+        </div>
+        <div className="p-4 bg-white border-b">
+          <Skeleton className="h-10 w-full mb-3" />
+          <div className="flex space-x-2">
+            <Skeleton className="h-10 w-20 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-28 rounded-full" />
+          </div>
+        </div>
+        <div className="grid gap-4 p-4">
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">

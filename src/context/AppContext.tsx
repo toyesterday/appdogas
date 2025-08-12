@@ -5,18 +5,18 @@ import { showSuccess } from '@/utils/toast';
 interface AppContextType {
   cart: CartItem[];
   orders: Order[];
-  favorites: number[];
+  favorites: string[];
   notifications: Notification[];
   chatMessages: ChatMessage[];
   userAddress: string;
   addToCart: (product: Product) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   getCartTotal: () => number;
   getCartItemCount: () => number;
   placeOrder: () => string | null;
-  toggleFavorite: (productId: number) => void;
-  isFavorite: (productId: number) => boolean;
+  toggleFavorite: (productId: string) => void;
+  isFavorite: (productId: string) => boolean;
   setUserAddress: (address: string) => void;
   markNotificationAsRead: (id: number) => void;
   getUnreadNotificationCount: () => number;
@@ -39,7 +39,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [userAddress, setUserAddress] = useState('');
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [favorites, setFavorites] = useState<number[]>([1, 3]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
 
   const addToCart = (product: Product) => {
@@ -55,11 +55,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showSuccess(`${product.name} adicionado ao carrinho!`);
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string) => {
     setCart(prev => prev.filter(item => item.id !== productId));
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -86,7 +86,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const finalTotal = total + deliveryFee;
 
     const newOrder: Order = {
-      id: Date.now(),
+      id: Date.now().toString(),
       items: [...cart],
       total: finalTotal,
       address: userAddress,
@@ -99,13 +99,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return null;
   };
 
-  const toggleFavorite = (productId: number) => {
+  const toggleFavorite = (productId: string) => {
     setFavorites(prev =>
       prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
     );
   };
 
-  const isFavorite = (productId: number) => favorites.includes(productId);
+  const isFavorite = (productId: string) => favorites.includes(productId);
 
   const markNotificationAsRead = (id: number) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));

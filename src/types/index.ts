@@ -1,5 +1,5 @@
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   originalPrice?: number;
@@ -10,6 +10,7 @@ export interface Product {
   reviews: number;
   promotion?: string | null;
   featured?: boolean;
+  createdAt: string;
 }
 
 export interface CartItem extends Product {
@@ -17,7 +18,7 @@ export interface CartItem extends Product {
 }
 
 export interface Order {
-  id: number;
+  id: string;
   items: CartItem[];
   total: number;
   address: string;
