@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Package, ShoppingCart, ArrowLeft, Settings } from 'lucide-react';
+import { Home, Package, ShoppingCart, ArrowLeft, Settings, Building } from 'lucide-react';
 
 const AdminLayout = () => {
   const navItems = [
     { path: '/admin/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/admin/products', icon: Package, label: 'Produtos' },
     { path: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
+    { path: '/admin/depots', icon: Building, label: 'Depósitos' },
     { path: '/admin/settings', icon: Settings, label: 'Configurações' },
   ];
 

@@ -20,6 +20,7 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import ProductsAdmin from "@/pages/admin/ProductsAdmin";
 import OrdersAdmin from "@/pages/admin/OrdersAdmin";
 import SettingsAdmin from "@/pages/admin/SettingsAdmin";
+import DepotsAdmin from "@/pages/admin/DepotsAdmin";
 
 const App = () => (
   <AppProvider>
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="products" element={<ProductsAdmin />} />
           <Route path="orders" element={<OrdersAdmin />} />
+          <Route path="depots" element={<DepotsAdmin />} />
           <Route path="settings" element={<SettingsAdmin />} />
         </Route>
 

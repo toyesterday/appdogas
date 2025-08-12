@@ -11,6 +11,7 @@ export interface Product {
   promotion: string | null;
   featured: boolean | null;
   created_at: string;
+  depot_id?: string | null;
 }
 
 export interface CartItem extends Product {
@@ -26,6 +27,7 @@ export interface Order {
   status: 'preparing' | 'delivering' | 'delivered';
   created_at: string;
   estimated_time: string;
+  depot_id?: string | null;
 }
 
 export interface Notification {
@@ -51,7 +53,8 @@ export interface Profile {
   avatar_url?: string;
   address?: string;
   updated_at?: string;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'depot_manager';
+  depot_id?: string | null;
 }
 
 export interface Favorite {
@@ -63,4 +66,12 @@ export interface Favorite {
 export interface AppSettings {
   free_shipping_threshold: number;
   free_shipping_banner_text: string;
+}
+
+export interface Depot {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  created_at: string;
 }
