@@ -18,9 +18,9 @@ interface AppContextType {
   updateQuantity: (productId: string, quantity: number) => void;
   getCartTotal: () => number;
   getCartItemCount: () => number;
-  placeOrder: () => string | null;
+  placeOrder: () => Promise<string | null>;
   toggleFavorite: (productId: string) => void;
-  isFavorite: (productId: string) => boolean;
+  isFavorite: (productId:string) => boolean;
   updateProfile: (data: { address?: string; full_name?: string }) => Promise<void>;
   markNotificationAsRead: (id: number) => void;
   getUnreadNotificationCount: () => number;
@@ -49,6 +49,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
 
+  const fetchOrders = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      showError('Não foi possível carregar seus pedidos.');
+    } else {
+      setOrders(data as Order[]);
+    }
+  };
+
   useEffect(() => {
     const setData = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -71,17 +85,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setProfile(data);
         }
+        await fetchOrders(session.user.id);
       }
       setLoading(false);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (_event === 'SIGNED_IN' && session) {
-         setData();
+         await setData();
       }
       if (_event === 'SIGNED_OUT') {
         setProfile(null);
+        setOrders([]);
       }
     });
 
@@ -105,6 +121,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       showError(error.message);
     } else {
       setProfile(prev => ({ ...prev!, ...updates }));
+      showSuccess("Endereço salvo!");
     }
   };
 
@@ -147,25 +164,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   };
 
-  const placeOrder = () => {
+  const placeOrder = async () => {
     if (!profile?.address) {
         return "Por favor, informe seu endereço para continuar.";
+    }
+    if (!session?.user) {
+        return "Você precisa estar logado para fazer um pedido.";
     }
     const total = getCartTotal();
     const deliveryFee = total >= 80 ? 0 : 8;
     const finalTotal = total + deliveryFee;
 
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      items: [...cart],
+    const newOrder = {
+      user_id: session.user.id,
+      items: cart,
       total: finalTotal,
       address: profile.address,
       status: 'preparing',
-      timestamp: new Date(),
-      estimatedTime: '45 min'
+      estimated_time: '45 min'
     };
-    setOrders(prev => [newOrder, ...prev]);
+
+    const { error } = await supabase.from('orders').insert([newOrder]);
+
+    if (error) {
+      showError("Erro ao registrar o pedido.");
+      return "Ocorreu um erro. Tente novamente.";
+    }
+
     setCart([]);
+    await fetchOrders(session.user.id);
     return null;
   };
 

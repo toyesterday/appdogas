@@ -25,6 +25,8 @@ const getStatusText = (status: Order['status']) => {
 };
 
 const OrderCard = ({ order }: OrderCardProps) => {
+  const orderTimestamp = new Date(order.created_at);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -44,14 +46,14 @@ const OrderCard = ({ order }: OrderCardProps) => {
         <div className="flex justify-between items-center">
           <div>
             <p className="text-sm text-gray-600">
-              {order.timestamp.toLocaleDateString()} às {order.timestamp.toLocaleTimeString().slice(0, 5)}
+              {orderTimestamp.toLocaleDateString()} às {orderTimestamp.toLocaleTimeString().slice(0, 5)}
             </p>
             <p className="text-sm text-gray-600 truncate max-w-[150px]">📍 {order.address}</p>
           </div>
           <div className="text-right">
             <p className="font-bold text-red-600">R$ {order.total.toFixed(2).replace('.', ',')}</p>
             {order.status !== 'delivered' && (
-              <p className="text-sm text-blue-600">⏱️ {order.estimatedTime}</p>
+              <p className="text-sm text-blue-600">⏱️ {order.estimated_time}</p>
             )}
           </div>
         </div>

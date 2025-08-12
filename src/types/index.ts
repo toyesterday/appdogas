@@ -10,7 +10,7 @@ export interface Product {
   reviews: number;
   promotion?: string | null;
   featured?: boolean;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface CartItem extends Product {
@@ -19,12 +19,13 @@ export interface CartItem extends Product {
 
 export interface Order {
   id: string;
+  user_id: string;
   items: CartItem[];
   total: number;
   address: string;
   status: 'preparing' | 'delivering' | 'delivered';
-  timestamp: Date;
-  estimatedTime: string;
+  created_at: string;
+  estimated_time: string;
 }
 
 export interface Notification {

@@ -23,9 +23,11 @@ const PaymentDialog = ({ open, onOpenChange }: PaymentDialogProps) => {
   const { placeOrder } = useApp();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('pix');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  const handlePlaceOrder = () => {
-    const error = placeOrder();
+  const handlePlaceOrder = async () => {
+    setIsPlacingOrder(true);
+    const error = await placeOrder();
     if (error) {
       showError(error);
     } else {
@@ -33,6 +35,7 @@ const PaymentDialog = ({ open, onOpenChange }: PaymentDialogProps) => {
       onOpenChange(false);
       navigate('/orders');
     }
+    setIsPlacingOrder(false);
   };
 
   return (
@@ -68,8 +71,8 @@ const PaymentDialog = ({ open, onOpenChange }: PaymentDialogProps) => {
           </Label>
         </RadioGroup>
         <DialogFooter>
-          <Button onClick={handlePlaceOrder} className="w-full">
-            Finalizar Pedido
+          <Button onClick={handlePlaceOrder} className="w-full" disabled={isPlacingOrder}>
+            {isPlacingOrder ? 'Finalizando...' : 'Finalizar Pedido'}
           </Button>
         </DialogFooter>
       </DialogContent>
