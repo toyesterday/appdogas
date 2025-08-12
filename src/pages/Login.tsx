@@ -36,6 +36,8 @@ const LoginPage = () => {
                 sign_in: {
                   email_label: 'Seu e-mail',
                   password_label: 'Sua senha',
+                  email_input_placeholder: 'Seu endereço de e-mail',
+                  password_input_placeholder: 'Sua senha',
                   button_label: 'Entrar',
                   social_provider_text: 'Entrar com',
                   link_text: 'Já tem uma conta? Entre',
@@ -43,12 +45,15 @@ const LoginPage = () => {
                 sign_up: {
                   email_label: 'Seu e-mail',
                   password_label: 'Crie uma senha',
+                  email_input_placeholder: 'Seu endereço de e-mail',
+                  password_input_placeholder: 'Crie uma senha forte',
                   button_label: 'Cadastrar',
                   link_text: 'Não tem uma conta? Cadastre-se',
                 },
                 forgotten_password: {
                   email_label: 'Seu e-mail',
                   password_label: 'Sua senha',
+                  email_input_placeholder: 'Seu endereço de e-mail',
                   button_label: 'Enviar instruções',
                   link_text: 'Esqueceu sua senha?',
                 }
