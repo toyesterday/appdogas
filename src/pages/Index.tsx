@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
-  const { profile, updateProfile } = useApp();
+  const { profile, updateProfile, appSettings } = useApp();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,15 +167,17 @@ const Index = () => {
         </div>
       )}
 
-      <div className="bg-yellow-100 border border-yellow-300 p-4 m-4 rounded-lg">
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl">🎉</span>
-          <div>
-            <p className="font-semibold text-yellow-800">Promoção especial!</p>
-            <p className="text-sm text-yellow-700">Frete grátis para pedidos acima de R$ 80,00</p>
+      {appSettings?.free_shipping_banner_text && (
+        <div className="bg-yellow-100 border border-yellow-300 p-4 m-4 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="font-semibold text-yellow-800">Promoção especial!</p>
+              <p className="text-sm text-yellow-700">{appSettings.free_shipping_banner_text}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="p-4">
         <h2 className="text-lg font-bold mb-4">Produtos disponíveis</h2>

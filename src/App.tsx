@@ -19,6 +19,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import ProductsAdmin from "@/pages/admin/ProductsAdmin";
 import OrdersAdmin from "@/pages/admin/OrdersAdmin";
+import SettingsAdmin from "@/pages/admin/SettingsAdmin";
 
 const App = () => (
   <AppProvider>
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="products" element={<ProductsAdmin />} />
           <Route path="orders" element={<OrdersAdmin />} />
+          <Route path="settings" element={<SettingsAdmin />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

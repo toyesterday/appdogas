@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CartPage = () => {
-  const { cart, getCartTotal, profile } = useApp();
+  const { cart, getCartTotal, profile, appSettings } = useApp();
   const [showPayment, setShowPayment] = useState(false);
   const subtotal = getCartTotal();
-  const deliveryFee = subtotal >= 80 ? 0 : 8.00;
+  const threshold = appSettings?.free_shipping_threshold || 80;
+  const deliveryFee = subtotal >= threshold ? 0 : 8.00;
   const total = subtotal + deliveryFee;
   const userAddress = profile?.address;
 

@@ -59,3 +59,8 @@ export interface Favorite {
   product_id: string;
   created_at: string;
 }
+
+export interface AppSettings {
+  free_shipping_threshold: number;
+  free_shipping_banner_text: string;
+}

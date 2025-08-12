@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Product, CartItem, Order, Notification, ChatMessage, Profile } from '@/types';
+import { Product, CartItem, Order, Notification, ChatMessage, Profile, AppSettings } from '@/types';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface AppContextType {
@@ -13,6 +13,7 @@ interface AppContextType {
   favorites: string[];
   notifications: Notification[];
   chatMessages: ChatMessage[];
+  appSettings: AppSettings | null;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -39,13 +40,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
 
   const fetchInitialData = async (userId: string) => {
-    const [ordersRes, favoritesRes, chatMessagesRes, notificationsRes] = await Promise.all([
+    const [ordersRes, favoritesRes, chatMessagesRes, notificationsRes, settingsRes] = await Promise.all([
       supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('favorites').select('product_id').eq('user_id', userId),
       supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
-      supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+      supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      supabase.from('app_settings').select('key, value')
     ]);
 
     if (ordersRes.error) showError('Não foi possível carregar seus pedidos.');
@@ -59,6 +62,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     if (notificationsRes.error) showError('Não foi possível carregar as notificações.');
     else setNotifications(notificationsRes.data as Notification[]);
+
+    if (settingsRes.data) {
+      const settings = settingsRes.data.reduce((acc, { key, value }) => {
+        acc[key] = key === 'free_shipping_threshold' ? parseFloat(value) : value;
+        return acc;
+      }, {} as any);
+      setAppSettings(settings);
+    }
   };
 
   useEffect(() => {
@@ -97,6 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setFavorites([]);
         setChatMessages([]);
         setNotifications([]);
+        setAppSettings(null);
       }
     });
 
@@ -181,7 +193,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!session?.user) return "Você precisa estar logado para fazer um pedido.";
     
     const total = getCartTotal();
-    const deliveryFee = total >= 80 ? 0 : 8;
+    const threshold = appSettings?.free_shipping_threshold || 80;
+    const deliveryFee = total >= threshold ? 0 : 8;
     const finalTotal = total + deliveryFee;
 
     const newOrder = {
@@ -271,7 +284,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
-    session, profile, loading, cart, orders, favorites, notifications, chatMessages,
+    session, profile, loading, cart, orders, favorites, notifications, chatMessages, appSettings,
     addToCart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount,
     placeOrder, toggleFavorite, isFavorite, updateProfile, markNotificationAsRead,
     getUnreadNotificationCount, sendMessage, signOut,
