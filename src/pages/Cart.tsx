@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CartPage = () => {
-  const { cart, getCartTotal, userAddress } = useApp();
+  const { cart, getCartTotal, profile } = useApp();
   const [showPayment, setShowPayment] = useState(false);
   const subtotal = getCartTotal();
   const deliveryFee = subtotal >= 80 ? 0 : 8.00;
   const total = subtotal + deliveryFee;
+  const userAddress = profile?.address;
 
   return (
     <div className="p-4 max-w-4xl mx-auto">

@@ -9,12 +9,19 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
-  const { userAddress, setUserAddress } = useApp();
+  const { profile, updateProfile } = useApp();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
+  const [localAddress, setLocalAddress] = useState(profile?.address || '');
+
+  useEffect(() => {
+    if (profile?.address) {
+      setLocalAddress(profile.address);
+    }
+  }, [profile]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -35,6 +42,16 @@ const Index = () => {
 
     fetchProducts();
   }, []);
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalAddress(e.target.value);
+  };
+
+  const handleAddressBlur = () => {
+    if (localAddress !== profile?.address) {
+      updateProfile({ address: localAddress });
+    }
+  };
 
   const filteredProducts = allProducts.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,8 +104,9 @@ const Index = () => {
           <Input
             type="text"
             placeholder="Digite seu endereço completo..."
-            value={userAddress}
-            onChange={(e) => setUserAddress(e.target.value)}
+            value={localAddress}
+            onChange={handleAddressChange}
+            onBlur={handleAddressBlur}
             className="flex-1 bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/70 focus:outline-none focus:bg-white/30"
           />
         </div>

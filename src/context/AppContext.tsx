@@ -1,14 +1,18 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { Product, CartItem, Order, Notification, ChatMessage } from '@/types';
-import { showSuccess } from '@/utils/toast';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { Product, CartItem, Order, Notification, ChatMessage, Profile } from '@/types';
+import { showSuccess, showError } from '@/utils/toast';
 
 interface AppContextType {
+  session: Session | null;
+  profile: Profile | null;
+  loading: boolean;
   cart: CartItem[];
   orders: Order[];
   favorites: string[];
   notifications: Notification[];
   chatMessages: ChatMessage[];
-  userAddress: string;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -17,10 +21,11 @@ interface AppContextType {
   placeOrder: () => string | null;
   toggleFavorite: (productId: string) => void;
   isFavorite: (productId: string) => boolean;
-  setUserAddress: (address: string) => void;
+  updateProfile: (data: { address?: string; full_name?: string }) => Promise<void>;
   markNotificationAsRead: (id: number) => void;
   getUnreadNotificationCount: () => number;
   sendMessage: (message: string) => void;
+  signOut: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,12 +40,77 @@ const initialChatMessages: ChatMessage[] = [
 ];
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [userAddress, setUserAddress] = useState('');
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
+
+  useEffect(() => {
+    const setData = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        showError(error.message);
+        setLoading(false);
+        return;
+      }
+      
+      setSession(session);
+      if (session) {
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profileError) {
+          showError(profileError.message);
+        } else {
+          setProfile(data);
+        }
+      }
+      setLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (_event === 'SIGNED_IN' && session) {
+         setData();
+      }
+      if (_event === 'SIGNED_OUT') {
+        setProfile(null);
+      }
+    });
+
+    setData();
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const updateProfile = async (data: { address?: string; full_name?: string }) => {
+    if (!session?.user) throw new Error('Usuário não logado');
+    
+    const updates = {
+      id: session.user.id,
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('profiles').upsert(updates);
+
+    if (error) {
+      showError(error.message);
+    } else {
+      setProfile(prev => ({ ...prev!, ...updates }));
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -78,7 +148,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const placeOrder = () => {
-    if (!userAddress) {
+    if (!profile?.address) {
         return "Por favor, informe seu endereço para continuar.";
     }
     const total = getCartTotal();
@@ -89,7 +159,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       id: Date.now().toString(),
       items: [...cart],
       total: finalTotal,
-      address: userAddress,
+      address: profile.address,
       status: 'preparing',
       timestamp: new Date(),
       estimatedTime: '45 min'
@@ -133,28 +203,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }, 2000);
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOrders(prev => prev.map(order => {
-        if (order.status === 'preparing' && Math.random() > 0.8) {
-          return { ...order, status: 'delivering' };
-        }
-        if (order.status === 'delivering' && Math.random() > 0.9) {
-          return { ...order, status: 'delivered' };
-        }
-        return order;
-      }));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   const value = {
+    session,
+    profile,
+    loading,
     cart,
     orders,
     favorites,
     notifications,
     chatMessages,
-    userAddress,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -163,10 +220,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     placeOrder,
     toggleFavorite,
     isFavorite,
-    setUserAddress,
+    updateProfile,
     markNotificationAsRead,
     getUnreadNotificationCount,
     sendMessage,
+    signOut,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

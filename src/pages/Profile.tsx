@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const ProfilePage = () => {
-  const { orders, favorites } = useApp();
+  const { orders, favorites, profile, session, signOut } = useApp();
 
   const menuItems = [
     { icon: MapPin, label: 'Meus Endereços' },
@@ -23,8 +23,8 @@ const ProfilePage = () => {
               <User className="w-8 h-8 text-red-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">João Silva</h2>
-              <p className="text-gray-600">joao.silva@email.com</p>
+              <h2 className="text-xl font-bold">{profile?.full_name || 'Usuário'}</h2>
+              <p className="text-gray-600">{session?.user?.email}</p>
             </div>
           </div>
         </CardContent>
@@ -64,7 +64,7 @@ const ProfilePage = () => {
         </CardContent>
       </Card>
 
-      <Button variant="outline" className="w-full">
+      <Button variant="outline" className="w-full" onClick={signOut}>
         <LogOut className="w-4 h-4 mr-2" />
         Sair da Conta
       </Button>

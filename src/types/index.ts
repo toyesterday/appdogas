@@ -41,3 +41,11 @@ export interface ChatMessage {
   sender: 'user' | 'support';
   time: Date;
 }
+
+export interface Profile {
+  id: string;
+  full_name?: string;
+  avatar_url?: string;
+  address?: string;
+  updated_at?: string;
+}

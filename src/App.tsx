@@ -7,6 +7,8 @@ import OrdersPage from "@/pages/Orders";
 import ProfilePage from "@/pages/Profile";
 import NotificationsPage from "@/pages/Notifications";
 import SupportPage from "@/pages/Support";
+import LoginPage from "@/pages/Login";
+import AuthGuard from "@/components/Auth";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -15,7 +17,14 @@ const App = () => (
     <Toaster richColors position="top-center" />
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          element={
+            <AuthGuard>
+              <Layout />
+            </AuthGuard>
+          }
+        >
           <Route path="/" element={<Index />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/orders" element={<OrdersPage />} />
