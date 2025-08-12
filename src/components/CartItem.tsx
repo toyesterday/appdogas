@@ -13,7 +13,13 @@ const CartItem = ({ item }: CartItemProps) => {
   return (
     <Card>
       <CardContent className="p-4 flex items-center space-x-4">
-        <span className="text-3xl">{item.image}</span>
+        <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center">
+          {item.image && item.image.startsWith('/') ? (
+            <img src={item.image} alt={item.name} className="max-w-full max-h-full object-contain" />
+          ) : (
+            <span className="text-3xl">{item.image}</span>
+          )}
+        </div>
         <div className="flex-1">
           <h3 className="font-semibold">{item.name}</h3>
           <p className="text-red-600 font-bold">R$ {item.price.toFixed(2).replace('.', ',')}</p>

@@ -15,7 +15,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Card className="overflow-hidden relative">
-      <div className="absolute top-3 left-3 flex flex-col space-y-1">
+      <div className="absolute top-3 left-3 flex flex-col space-y-1 z-10">
         {product.featured && (
           <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
             <Star className="w-3 h-3 mr-1" /> Destaque
@@ -29,14 +29,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
         variant="ghost"
         size="icon"
         onClick={() => toggleFavorite(product.id)}
-        className="absolute top-2 right-2 h-8 w-8 rounded-full"
+        className="absolute top-2 right-2 h-8 w-8 rounded-full z-10"
       >
         <Heart className={`w-5 h-5 ${favorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
       </Button>
       
       <CardContent className="p-4">
-        <div className="flex items-start space-x-4 mt-6">
-          <div className="text-4xl">{product.image}</div>
+        <div className="flex items-start space-x-4">
+          <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
+            {product.image && product.image.startsWith('/') ? (
+              <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+            ) : (
+              <span className="text-4xl">{product.image}</span>
+            )}
+          </div>
           <div className="flex-1">
             <h3 className="font-semibold text-lg">{product.name}</h3>
             <p className="text-gray-600 text-sm mb-2">{product.description}</p>
