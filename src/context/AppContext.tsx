@@ -108,7 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!session?.user) return;
 
-    const channel = supabase.channel(`notifications:${session.user.id}`)
+    const notificationsChannel = supabase.channel(`notifications:${session.user.id}`)
       .on<Notification>(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` },
@@ -119,8 +119,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       )
       .subscribe();
 
+    const ordersChannel = supabase.channel(`orders:${session.user.id}`)
+      .on<Order>(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${session.user.id}` },
+        (payload) => {
+          setOrders(prev => prev.map(o => o.id === payload.new.id ? payload.new : o));
+          showSuccess(`Seu pedido #${payload.new.id.slice(-6)} foi atualizado!`);
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(ordersChannel);
     };
   }, [session]);
 
@@ -128,12 +140,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!session?.user) throw new Error('Usuário não logado');
     
     const updates = { id: session.user.id, ...data, updated_at: new Date().toISOString() };
-    const { error } = await supabase.from('profiles').upsert(updates);
+    const { error } = await supabase.from('profiles').upsert(updates).select().single();
 
-    if (error) showError(error.message);
-    else {
+    if (error) {
+      showError(error.message);
+    } else {
       setProfile(prev => ({ ...prev!, ...updates }));
-      showSuccess("Endereço salvo!");
+      showSuccess("Perfil atualizado!");
     }
   };
 
@@ -190,13 +203,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setOrders(prev => [orderData, ...prev]);
     setCart([]);
     
-    // Create notification for the new order
     const notification = {
       user_id: session.user.id,
       title: 'Pedido Confirmado!',
       message: `Seu pedido #${orderData.id.slice(-6)} está sendo preparado.`
     };
     await supabase.from('notifications').insert(notification);
+
+    // Simulação de atualização de status
+    setTimeout(() => {
+      supabase.from('orders').update({ status: 'delivering' }).eq('id', orderData.id).then();
+    }, 30000); // 30 segundos
+
+    setTimeout(() => {
+      supabase.from('orders').update({ status: 'delivered' }).eq('id', orderData.id).then();
+    }, 90000); // 90 segundos
 
     return null;
   };

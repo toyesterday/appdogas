@@ -51,6 +51,7 @@ export interface Profile {
   avatar_url?: string;
   address?: string;
   updated_at?: string;
+  role?: 'user' | 'admin';
 }
 
 export interface Favorite {

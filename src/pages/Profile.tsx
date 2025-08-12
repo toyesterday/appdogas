@@ -1,10 +1,14 @@
-import { User, MapPin, CreditCard, Star, Bell, Phone, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { User, MapPin, CreditCard, Star, Bell, Phone, LogOut, Edit, Check } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 const ProfilePage = () => {
-  const { orders, favorites, profile, session, signOut } = useApp();
+  const { orders, favorites, profile, session, signOut, updateProfile } = useApp();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [fullName, setFullName] = useState(profile?.full_name || '');
 
   const menuItems = [
     { icon: MapPin, label: 'Meus Endereços' },
@@ -14,6 +18,13 @@ const ProfilePage = () => {
     { icon: Phone, label: 'Suporte' },
   ];
 
+  const handleSaveName = async () => {
+    if (fullName.trim() && fullName !== profile?.full_name) {
+      await updateProfile({ full_name: fullName });
+    }
+    setIsEditingName(false);
+  };
+
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-4">
       <Card>
@@ -22,8 +33,24 @@ const ProfilePage = () => {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
               <User className="w-8 h-8 text-red-600" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold">{profile?.full_name || 'Usuário'}</h2>
+            <div className="flex-1">
+              {isEditingName ? (
+                <div className="flex items-center space-x-2">
+                  <Input 
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Nome completo"
+                  />
+                  <Button size="icon" onClick={handleSaveName}><Check className="w-4 h-4" /></Button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-xl font-bold">{profile?.full_name || 'Usuário'}</h2>
+                  <Button variant="ghost" size="icon" onClick={() => setIsEditingName(true)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
               <p className="text-gray-600">{session?.user?.email}</p>
             </div>
           </div>
