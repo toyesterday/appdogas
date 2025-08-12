@@ -210,15 +210,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     await supabase.from('notifications').insert(notification);
 
-    // Simulação de atualização de status
-    setTimeout(() => {
-      supabase.from('orders').update({ status: 'delivering' }).eq('id', orderData.id).then();
-    }, 30000); // 30 segundos
-
-    setTimeout(() => {
-      supabase.from('orders').update({ status: 'delivered' }).eq('id', orderData.id).then();
-    }, 90000); // 90 segundos
-
     return null;
   };
 

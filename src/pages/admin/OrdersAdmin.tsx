@@ -6,10 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { showError, showSuccess } from '@/utils/toast';
 
-// Define um tipo mais específico para os pedidos nesta página, incluindo o nome do cliente.
 type AdminOrder = Order & {
   user_name: string;
 };
+
+const statusOptions: { value: Order['status']; label: string; variant: 'default' | 'secondary' | 'outline' }[] = [
+  { value: 'preparing', label: 'Preparando', variant: 'default' },
+  { value: 'delivering', label: 'Em Rota', variant: 'secondary' },
+  { value: 'delivered', label: 'Entregue', variant: 'outline' },
+];
 
 const OrdersAdmin = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -26,10 +31,8 @@ const OrdersAdmin = () => {
       showError('Falha ao carregar pedidos.');
       console.error(error);
     } else {
-      // Tipagem para garantir que o Supabase retornou o que esperamos
       const typedData = data as (Order & { profile: { full_name: string } | null })[];
       
-      // Formata os dados para incluir o nome do usuário de forma segura
       const formattedData: AdminOrder[] = typedData.map(d => ({
         ...d,
         user_name: d.profile?.full_name || 'N/A'
@@ -87,9 +90,11 @@ const OrdersAdmin = () => {
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="preparing"><Badge>Preparando</Badge></SelectItem>
-                        <SelectItem value="delivering"><Badge variant="secondary">Em Rota</Badge></SelectItem>
-                        <SelectItem value="delivered"><Badge variant="outline">Entregue</Badge></SelectItem>
+                        {statusOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <Badge variant={option.variant}>{option.label}</Badge>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </TableCell>
