@@ -22,7 +22,7 @@ const Index = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .order('createdAt', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching products:', error);
