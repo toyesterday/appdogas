@@ -13,6 +13,7 @@ type AdminOrderView = {
   total: number;
   status: Order['status'];
   payment_method: Order['payment_method'];
+  change_for: string | null;
   user_name: string | null;
 };
 
@@ -22,13 +23,35 @@ const statusOptions: { value: Order['status']; label: string; variant: 'default'
   { value: 'delivered', label: 'Entregue', variant: 'outline' },
 ];
 
-const PaymentMethodDisplay = ({ method }: { method: Order['payment_method'] }) => {
+const PaymentMethodDisplay = ({ method, changeFor }: { method: Order['payment_method'], changeFor: string | null }) => {
+  let content;
   switch (method) {
-    case 'pix': return <div className="flex items-center space-x-2"><span className="text-lg">📱</span><span>PIX</span></div>;
-    case 'card': return <div className="flex items-center space-x-2"><CreditCard className="w-5 h-5" /><span>Cartão</span></div>;
-    case 'money': return <div className="flex items-center space-x-2"><span className="text-lg">💰</span><span>Dinheiro</span></div>;
-    default: return <span>N/A</span>;
+    case 'pix': 
+      content = <div className="flex items-center space-x-2"><span className="text-lg">📱</span><span>PIX</span></div>;
+      break;
+    case 'card': 
+      content = <div className="flex items-center space-x-2"><CreditCard className="w-5 h-5" /><span>Cartão</span></div>;
+      break;
+    case 'money': 
+      content = (
+        <div className="flex items-center space-x-2">
+          <span className="text-lg">💰</span>
+          <span>Dinheiro</span>
+        </div>
+      );
+      break;
+    default: 
+      content = <span>N/A</span>;
   }
+
+  return (
+    <div>
+      {content}
+      {method === 'money' && changeFor && (
+        <p className="text-xs text-gray-500">Troco p/ R$ {changeFor}</p>
+      )}
+    </div>
+  );
 };
 
 const OrdersAdmin = () => {
@@ -95,7 +118,7 @@ const OrdersAdmin = () => {
                   <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
                   <TableCell>
-                    <PaymentMethodDisplay method={order.payment_method} />
+                    <PaymentMethodDisplay method={order.payment_method} changeFor={order.change_for} />
                   </TableCell>
                   <TableCell>
                     <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value as Order['status'])}>
