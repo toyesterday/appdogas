@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppProvider } from "@/context/AppContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AppProvider, useApp } from "@/context/AppContext";
 import Layout from "@/components/layout/Layout";
-import Index from "@/pages/Index";
+import Dashboard from "@/pages/Dashboard";
 import CartPage from "@/pages/Cart";
 import OrdersPage from "@/pages/Orders";
 import OrderDetailPage from "@/pages/OrderDetail";
@@ -12,6 +12,7 @@ import LoginPage from "@/pages/Login";
 import AuthGuard from "@/components/Auth";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/sonner";
+import LandingPage from "@/pages/LandingPage";
 
 // Admin imports
 import AdminGuard from "@/components/admin/AdminGuard";
@@ -22,48 +23,63 @@ import OrdersAdmin from "@/pages/admin/OrdersAdmin";
 import SettingsAdmin from "@/pages/admin/SettingsAdmin";
 import DepotsAdmin from "@/pages/admin/DepotsAdmin";
 
+const AppRoutes = () => {
+  const { session, loading } = useApp();
+
+  if (loading) {
+    // You can return a global loading spinner here if you want
+    return <div className="h-screen w-screen flex items-center justify-center"><p>Carregando...</p></div>;
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={!session ? <LandingPage /> : <Navigate to="/dashboard" />} />
+      <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/dashboard" />} />
+      
+      {/* User-facing protected routes */}
+      <Route
+        element={
+          <AuthGuard>
+            <Layout />
+          </AuthGuard>
+        }
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/:id" element={<OrderDetailPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/support" element={<SupportPage />} />
+      </Route>
+
+      {/* Admin routes */}
+      <Route
+        path="/admin"
+        element={
+          <AdminGuard>
+            <AdminLayout />
+          </AdminGuard>
+        }
+      >
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="products" element={<ProductsAdmin />} />
+        <Route path="orders" element={<OrdersAdmin />} />
+        <Route path="depots" element={<DepotsAdmin />} />
+        <Route path="settings" element={<SettingsAdmin />} />
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
+
+
 const App = () => (
   <AppProvider>
     <Toaster richColors position="top-center" />
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        
-        {/* User-facing routes */}
-        <Route
-          element={
-            <AuthGuard>
-              <Layout />
-            </AuthGuard>
-          }
-        >
-          <Route path="/" element={<Index />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/orders/:id" element={<OrderDetailPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/support" element={<SupportPage />} />
-        </Route>
-
-        {/* Admin routes */}
-        <Route
-          path="/admin"
-          element={
-            <AdminGuard>
-              <AdminLayout />
-            </AdminGuard>
-          }
-        >
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="products" element={<ProductsAdmin />} />
-          <Route path="orders" element={<OrdersAdmin />} />
-          <Route path="depots" element={<DepotsAdmin />} />
-          <Route path="settings" element={<SettingsAdmin />} />
-        </Route>
-
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <AppRoutes />
     </BrowserRouter>
   </AppProvider>
 );

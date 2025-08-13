@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const Index = () => {
+const Dashboard = () => {
   const { profile, updateProfile, appSettings } = useApp();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,4 +198,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Dashboard;

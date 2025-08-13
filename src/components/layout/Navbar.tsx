@@ -10,10 +10,10 @@ const Navbar = () => {
   const cartItemCount = getCartItemCount();
   const unreadCount = getUnreadNotificationCount();
 
-  const showBackButton = location.pathname !== '/';
+  const showBackButton = location.pathname !== '/dashboard';
 
   const pageTitles: { [key: string]: string } = {
-    '/': '🔥 GásExpress',
+    '/dashboard': '🔥 GásExpress',
     '/cart': 'Meu Carrinho',
     '/orders': 'Meus Pedidos',
     '/profile': 'Meu Perfil',

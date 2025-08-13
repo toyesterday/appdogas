@@ -23,7 +23,7 @@ const CartPage = () => {
           <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Seu carrinho está vazio</p>
           <Button asChild>
-            <Link to="/">Ver Produtos</Link>
+            <Link to="/dashboard">Ver Produtos</Link>
           </Button>
         </div>
       ) : (
