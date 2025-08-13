@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Order } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { showError, showSuccess } from '@/utils/toast';
+import { showError } from '@/utils/toast';
 import { CreditCard } from 'lucide-react';
 
 type AdminOrderView = {
@@ -78,20 +77,6 @@ const OrdersAdmin = () => {
     fetchOrders();
   }, []);
 
-  const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId);
-
-    if (error) {
-      showError('Falha ao atualizar status.');
-    } else {
-      showSuccess('Status do pedido atualizado!');
-      fetchOrders(); // Recarrega a lista para mostrar a mudança
-    }
-  };
-
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Todos os Pedidos</h1>
@@ -111,31 +96,23 @@ const OrdersAdmin = () => {
             {loading ? (
               <TableRow><TableCell colSpan={6} className="text-center">Carregando...</TableCell></TableRow>
             ) : (
-              orders.map(order => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-mono">#{order.id.slice(-6)}</TableCell>
-                  <TableCell>{order.user_name || 'N/A'}</TableCell>
-                  <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
-                  <TableCell>
-                    <PaymentMethodDisplay method={order.payment_method} changeFor={order.change_for} />
-                  </TableCell>
-                  <TableCell>
-                    <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value as Order['status'])}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <Badge variant={option.variant}>{option.label}</Badge>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))
+              orders.map(order => {
+                const statusInfo = statusOptions.find(s => s.value === order.status) || statusOptions[0];
+                return (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono">#{order.id.slice(-6)}</TableCell>
+                    <TableCell>{order.user_name || 'N/A'}</TableCell>
+                    <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
+                    <TableCell>
+                      <PaymentMethodDisplay method={order.payment_method} changeFor={order.change_for} />
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
