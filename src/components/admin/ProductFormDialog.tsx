@@ -34,7 +34,7 @@ const productFormSchema = z.object({
   brand: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }),
-  originalPrice: z.coerce.number().positive({ message: "O preço original deve ser um número positivo." }).optional().nullable(),
+  original_price: z.coerce.number().positive({ message: "O preço original deve ser um número positivo." }).optional().nullable(),
   image: z.string().optional().nullable(),
   promotion: z.string().optional().nullable(),
   featured: z.boolean().default(false),
@@ -86,7 +86,7 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
       brand: '',
       description: '',
       price: 0,
-      originalPrice: undefined,
+      original_price: undefined,
       image: '',
       promotion: '',
       featured: false,
@@ -237,7 +237,7 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
             />
             <FormField
               control={form.control}
-              name="originalPrice"
+              name="original_price"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Preço Original (Opcional)</FormLabel>

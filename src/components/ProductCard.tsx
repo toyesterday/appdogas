@@ -52,9 +52,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                {product.originalPrice && (
+                {product.original_price && (
                   <span className="text-sm text-gray-500 line-through mr-2">
-                    R$ {product.originalPrice.toFixed(2).replace('.', ',')}
+                    R$ {product.original_price.toFixed(2).replace('.', ',')}
                   </span>
                 )}
                 <span className="text-2xl font-bold text-red-600">
