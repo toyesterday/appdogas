@@ -13,6 +13,8 @@ import AuthGuard from "@/components/Auth";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "@/pages/LandingPage";
+import DepotSelectionPage from "@/pages/DepotSelection";
+import DepotLayout from "@/components/layout/DepotLayout";
 
 // Admin imports
 import AdminGuard from "@/components/admin/AdminGuard";
@@ -27,53 +29,43 @@ const AppRoutes = () => {
   const { session, loading } = useApp();
 
   if (loading) {
-    // You can return a global loading spinner here if you want
     return <div className="h-screen w-screen flex items-center justify-center"><p>Carregando...</p></div>;
   }
 
   return (
     <Routes>
-      <Route path="/" element={!session ? <LandingPage /> : <Navigate to="/dashboard" />} />
-      <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/dashboard" />} />
-      
-      {/* User-facing protected routes */}
-      <Route
-        element={
-          <AuthGuard>
-            <Layout />
-          </AuthGuard>
-        }
-      >
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/orders/:id" element={<OrderDetailPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/support" element={<SupportPage />} />
+      {/* Public Routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/depots" element={<DepotSelectionPage />} />
+      <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/depots" />} />
+
+      {/* Depot-specific Routes */}
+      <Route path="/:depotSlug" element={<DepotLayout />}>
+        <Route element={<AuthGuard><Layout /></AuthGuard>}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="cart" element={<CartPage />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/:id" element={<OrderDetailPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="support" element={<SupportPage />} />
+        </Route>
       </Route>
 
-      {/* Admin routes */}
-      <Route
-        path="/admin"
-        element={
-          <AdminGuard>
-            <AdminLayout />
-          </AdminGuard>
-        }
-      >
+      {/* Admin Routes */}
+      <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="products" element={<ProductsAdmin />} />
         <Route path="orders" element={<OrdersAdmin />} />
         <Route path="depots" element={<DepotsAdmin />} />
         <Route path="settings" element={<SettingsAdmin />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
-
 
 const App = () => (
   <AppProvider>

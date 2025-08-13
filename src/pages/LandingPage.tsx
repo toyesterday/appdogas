@@ -19,7 +19,7 @@ const LandingPage = () => {
               <Link to="/login">Entrar</Link>
             </Button>
             <Button asChild className="bg-red-600 hover:bg-red-700">
-              <Link to="/login">Peça Agora</Link>
+              <Link to="/depots">Peça Agora</Link>
             </Button>
           </div>
         </nav>
@@ -39,7 +39,7 @@ const LandingPage = () => {
             </p>
             <div className="mt-8">
               <Button size="lg" className="text-lg h-14 px-8 bg-red-600 hover:bg-red-700 shadow-lg transform hover:scale-105 transition-transform" asChild>
-                <Link to="/login">QUERO PEDIR AGORA</Link>
+                <Link to="/depots">QUERO PEDIR AGORA</Link>
               </Button>
             </div>
           </AnimatedSection>
@@ -209,7 +209,7 @@ const LandingPage = () => {
             </p>
             <div className="mt-8">
               <Button size="lg" variant="secondary" className="text-lg h-14 px-8 bg-white text-red-600 hover:bg-gray-100 shadow-lg transform hover:scale-105 transition-transform" asChild>
-                <Link to="/login">COMEÇAR AGORA</Link>
+                <Link to="/depots">COMEÇAR AGORA</Link>
               </Button>
             </div>
           </AnimatedSection>
