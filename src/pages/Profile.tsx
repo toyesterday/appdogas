@@ -166,10 +166,10 @@ const ProfilePage = () => {
             <div className="text-2xl font-bold text-red-600">R$ {orders.reduce((sum, order) => sum + order.total, 0).toFixed(2).replace('.', ',')}</div>
             <div className="text-sm text-gray-600">Gastos</div>
           </div>
-          <div>
+          <Link to={`/${depotSlug}/favorites`} className="hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors">
             <div className="text-2xl font-bold text-red-600">{favorites.length}</div>
             <div className="text-sm text-gray-600">Favoritos</div>
-          </div>
+          </Link>
         </CardContent>
       </Card>
 

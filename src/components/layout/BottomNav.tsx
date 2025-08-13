@@ -1,5 +1,5 @@
 import { NavLink, useParams } from 'react-router-dom';
-import { Home, MessageCircle, ShoppingCart, Truck, User } from 'lucide-react';
+import { Home, Heart, ShoppingCart, Truck, User } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 
@@ -9,8 +9,8 @@ const BottomNav = () => {
   const cartItemCount = getCartItemCount();
 
   const navItems = [
-    { path: `/${depotSlug}/support`, icon: MessageCircle, label: 'Suporte' },
     { path: `/${depotSlug}/dashboard`, icon: Home, label: 'Início' },
+    { path: `/${depotSlug}/favorites`, icon: Heart, label: 'Favoritos' },
     { path: `/${depotSlug}/cart`, icon: ShoppingCart, label: 'Carrinho', badge: cartItemCount },
     { path: `/${depotSlug}/orders`, icon: Truck, label: 'Pedidos' },
     { path: `/${depotSlug}/profile`, icon: User, label: 'Perfil' },

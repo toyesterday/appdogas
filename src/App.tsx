@@ -16,6 +16,7 @@ import LandingPage from "@/pages/LandingPage";
 import DepotSelectionPage from "@/pages/DepotSelection";
 import DepotLayout from "@/components/layout/DepotLayout";
 import AddressesPage from "@/pages/Addresses";
+import FavoritesPage from "@/pages/Favorites";
 
 // Admin imports
 import AdminGuard from "@/components/admin/AdminGuard";
@@ -62,6 +63,7 @@ const AppRoutes = () => {
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="support" element={<SupportPage />} />
           <Route path="addresses" element={<AddressesPage />} />
+          <Route path="favorites" element={<FavoritesPage />} />
         </Route>
       </Route>
 

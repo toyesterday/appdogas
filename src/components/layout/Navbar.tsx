@@ -26,6 +26,8 @@ const Navbar = () => {
       case '/profile': return 'Meu Perfil';
       case '/notifications': return 'Notificações';
       case '/support': return 'Suporte';
+      case '/favorites': return 'Meus Favoritos';
+      case '/addresses': return 'Meus Endereços';
       default:
         if (path.startsWith('/orders/')) return 'Detalhes do Pedido';
         return depot.name;
