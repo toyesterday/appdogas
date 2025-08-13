@@ -25,6 +25,7 @@ export interface Order {
   total: number;
   address: string;
   status: 'preparing' | 'delivering' | 'delivered';
+  payment_method: 'pix' | 'card' | 'money';
   created_at: string;
   estimated_time: string;
   depot_id?: string | null;

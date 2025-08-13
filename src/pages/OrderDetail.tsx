@@ -5,8 +5,17 @@ import { Order } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CreditCard } from 'lucide-react';
 import OrderTracker from '@/components/OrderTracker';
+
+const getPaymentMethodInfo = (method: Order['payment_method']) => {
+  switch (method) {
+    case 'pix': return { label: 'PIX na entrega', icon: <span className="text-xl">📱</span> };
+    case 'card': return { label: 'Cartão na entrega', icon: <CreditCard className="w-5 h-5 text-blue-600" /> };
+    case 'money': return { label: 'Dinheiro na entrega', icon: <span className="text-xl">💰</span> };
+    default: return { label: 'Não informado', icon: null };
+  }
+};
 
 const OrderDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,6 +85,7 @@ const OrderDetailPage = () => {
   }
 
   const orderTimestamp = new Date(order.created_at);
+  const paymentInfo = getPaymentMethodInfo(order.payment_method);
 
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-4">
@@ -105,6 +115,13 @@ const OrderDetailPage = () => {
             <div className="flex justify-between">
               <span className="text-gray-600">Endereço de Entrega</span>
               <span className="text-right">{order.address}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Pagamento</span>
+              <div className="flex items-center space-x-2">
+                {paymentInfo.icon}
+                <span>{paymentInfo.label}</span>
+              </div>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Total</span>

@@ -21,7 +21,7 @@ interface AppContextType {
   updateQuantity: (productId: string, quantity: number) => void;
   getCartTotal: () => number;
   getCartItemCount: () => number;
-  placeOrder: () => Promise<string | null>;
+  placeOrder: (paymentMethod: 'pix' | 'card' | 'money') => Promise<string | null>;
   toggleFavorite: (productId: string) => Promise<void>;
   isFavorite: (productId:string) => boolean;
   updateProfile: (data: { full_name?: string }) => Promise<void>;
@@ -213,7 +213,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   const getCartItemCount = () => cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const placeOrder = async () => {
+  const placeOrder = async (paymentMethod: 'pix' | 'card' | 'money') => {
     if (!selectedAddress) return "Por favor, selecione um endereço de entrega.";
     if (!session?.user) return "Você precisa estar logado para fazer um pedido.";
     if (cart.length === 0) return "Seu carrinho está vazio.";
@@ -230,6 +230,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       total: finalTotal,
       address: selectedAddress.address,
       status: 'preparing' as const,
+      payment_method: paymentMethod,
       estimated_time: '45 min'
     };
 
