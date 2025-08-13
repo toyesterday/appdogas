@@ -49,8 +49,8 @@ const UsersAdmin = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Gerenciar Usuários</h1>
-      <div className="bg-white rounded-lg shadow">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Gerenciar Usuários</h1>
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -66,13 +66,13 @@ const UsersAdmin = () => {
             ) : (
               users.map(user => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{user.full_name || 'N/A'}</TableCell>
                   <TableCell>
                     <Badge variant={roleMap[user.role || 'user']?.variant || 'secondary'}>
                       {roleMap[user.role || 'user']?.label || 'Usuário'}
                     </Badge>
                   </TableCell>
-                  <TableCell>{user.depots?.name || '---'}</TableCell>
+                  <TableCell className="whitespace-nowrap">{user.depots?.name || '---'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
                       Editar

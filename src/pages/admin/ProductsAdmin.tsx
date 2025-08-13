@@ -53,14 +53,14 @@ const ProductsAdmin = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gerenciar Produtos</h1>
-        <Button onClick={handleAddNew}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Gerenciar Produtos</h1>
+        <Button onClick={handleAddNew} className="w-full sm:w-auto">
           <PlusCircle className="w-4 h-4 mr-2" />
           Adicionar Produto
         </Button>
       </div>
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -77,9 +77,9 @@ const ProductsAdmin = () => {
             ) : (
               products.map(product => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.brand}</TableCell>
-                  <TableCell>R$ {product.price.toFixed(2).replace('.', ',')}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{product.name}</TableCell>
+                  <TableCell className="whitespace-nowrap">{product.brand}</TableCell>
+                  <TableCell className="whitespace-nowrap">R$ {product.price.toFixed(2).replace('.', ',')}</TableCell>
                   <TableCell>{product.featured ? 'Sim' : 'Não'}</TableCell>
                   <TableCell>
                     <DropdownMenu>

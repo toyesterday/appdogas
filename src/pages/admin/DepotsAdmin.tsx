@@ -53,14 +53,14 @@ const DepotsAdmin = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gerenciar Depósitos</h1>
-        <Button onClick={handleAddNew}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Gerenciar Depósitos</h1>
+        <Button onClick={handleAddNew} className="w-full sm:w-auto">
           <PlusCircle className="w-4 h-4 mr-2" />
           Adicionar Depósito
         </Button>
       </div>
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -76,9 +76,9 @@ const DepotsAdmin = () => {
             ) : (
               depots.map(depot => (
                 <TableRow key={depot.id}>
-                  <TableCell className="font-medium">{depot.name}</TableCell>
-                  <TableCell className="font-mono">/{depot.slug}</TableCell>
-                  <TableCell>{depot.address}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{depot.name}</TableCell>
+                  <TableCell className="font-mono whitespace-nowrap">/{depot.slug}</TableCell>
+                  <TableCell className="whitespace-nowrap">{depot.address}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

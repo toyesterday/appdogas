@@ -5,14 +5,16 @@ import { Conversation, ChatMessage } from '@/types';
 import { showError } from '@/utils/toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, MessageSquare } from 'lucide-react';
+import { Send, MessageSquare, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ChatWindowProps {
   conversation: Conversation | null;
+  isMobile?: boolean;
+  onBack?: () => void;
 }
 
-const ChatWindow = ({ conversation }: ChatWindowProps) => {
+const ChatWindow = ({ conversation, isMobile, onBack }: ChatWindowProps) => {
   const { profile, sendSupportMessage } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,9 @@ const ChatWindow = ({ conversation }: ChatWindowProps) => {
       }
       setLoading(false);
     };
-    fetchMessages();
+    if (conversation) {
+      fetchMessages();
+    }
   }, [conversation, profile?.depot_id]);
 
   useEffect(() => {
@@ -92,7 +96,12 @@ const ChatWindow = ({ conversation }: ChatWindowProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex items-center gap-2">
+        {isMobile && (
+          <Button variant="ghost" size="icon" className="mr-2" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
         <h3 className="font-semibold text-lg">{conversation.full_name}</h3>
       </div>
       <div className="flex-1 p-4 overflow-y-auto">

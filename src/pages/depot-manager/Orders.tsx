@@ -77,7 +77,9 @@ const DepotManagerOrders = () => {
   };
 
   useEffect(() => {
-    fetchOrders();
+    if (profile?.depot_id) {
+      fetchOrders();
+    }
   }, [profile]);
 
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
@@ -109,8 +111,8 @@ const DepotManagerOrders = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Pedidos do Depósito</h1>
-      <div className="bg-white rounded-lg shadow">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Pedidos do Depósito</h1>
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -131,10 +133,10 @@ const DepotManagerOrders = () => {
                 const statusInfo = statusOptions.find(s => s.value === order.status) || statusOptions[0];
                 return (
                   <TableRow key={order.id} className={order.status === 'canceled' ? 'bg-gray-50 text-gray-500' : ''}>
-                    <TableCell className="font-mono">#{order.id.slice(-6)}</TableCell>
-                    <TableCell>{order.user_name || 'N/A'}</TableCell>
-                    <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
+                    <TableCell className="font-mono whitespace-nowrap">#{order.id.slice(-6)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{order.user_name || 'N/A'}</TableCell>
+                    <TableCell className="whitespace-nowrap">{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="whitespace-nowrap">R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
                     <TableCell>
                       <PaymentMethodDisplay method={order.payment_method} changeFor={order.change_for} />
                     </TableCell>

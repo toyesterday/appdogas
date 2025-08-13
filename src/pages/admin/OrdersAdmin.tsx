@@ -16,10 +16,11 @@ type AdminOrderView = {
   user_name: string | null;
 };
 
-const statusOptions: { value: Order['status']; label: string; variant: 'default' | 'secondary' | 'outline' }[] = [
+const statusOptions: { value: Order['status']; label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }[] = [
   { value: 'preparing', label: 'Preparando', variant: 'default' },
   { value: 'delivering', label: 'Em Rota', variant: 'secondary' },
   { value: 'delivered', label: 'Entregue', variant: 'outline' },
+  { value: 'canceled', label: 'Cancelado', variant: 'destructive' },
 ];
 
 const PaymentMethodDisplay = ({ method, changeFor }: { method: Order['payment_method'], changeFor: string | null }) => {
@@ -79,8 +80,8 @@ const OrdersAdmin = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Todos os Pedidos</h1>
-      <div className="bg-white rounded-lg shadow">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Todos os Pedidos</h1>
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -100,10 +101,10 @@ const OrdersAdmin = () => {
                 const statusInfo = statusOptions.find(s => s.value === order.status) || statusOptions[0];
                 return (
                   <TableRow key={order.id}>
-                    <TableCell className="font-mono">#{order.id.slice(-6)}</TableCell>
-                    <TableCell>{order.user_name || 'N/A'}</TableCell>
-                    <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
+                    <TableCell className="font-mono whitespace-nowrap">#{order.id.slice(-6)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{order.user_name || 'N/A'}</TableCell>
+                    <TableCell className="whitespace-nowrap">{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="whitespace-nowrap">R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
                     <TableCell>
                       <PaymentMethodDisplay method={order.payment_method} changeFor={order.change_for} />
                     </TableCell>
