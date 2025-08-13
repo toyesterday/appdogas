@@ -1,10 +1,66 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
-import { User, MapPin, CreditCard, Star, Bell, Phone, LogOut, Edit, Check } from 'lucide-react';
+import { User, MapPin, CreditCard, Star, Bell, Phone, LogOut, Edit, Check, Gift } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { LoyaltyProgram } from '@/types';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+
+const LoyaltyCard = () => {
+  const { session } = useApp();
+  const [programs, setPrograms] = useState<LoyaltyProgram[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      if (!session?.user) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('loyalty_programs')
+        .select('*, products(name), depots(name)')
+        .eq('user_id', session.user.id);
+      
+      if (error) console.error("Error fetching loyalty programs", error);
+      else setPrograms(data as any);
+      setLoading(false);
+    };
+    fetchPrograms();
+  }, [session]);
+
+  if (loading || programs.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center"><Gift className="w-5 h-5 mr-2 text-red-500" /> Programa de Fidelidade</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {programs.map(program => (
+          <div key={program.id} className="p-3 border rounded-lg">
+            <p className="font-semibold text-sm text-gray-500">Depósito {program.depots.name}</p>
+            <div className="my-2">
+              <div className="flex justify-between items-end mb-1">
+                <p className="text-sm">Progresso:</p>
+                <p className="font-bold">{program.current_purchases} / {program.target_purchases}</p>
+              </div>
+              <Progress value={(program.current_purchases / program.target_purchases) * 100} />
+            </div>
+            <p className="text-sm">
+              Recompensa: <span className="font-semibold">{program.reward_discount_percentage}% OFF</span> em <span className="font-semibold">{program.products.name}</span>
+            </p>
+            {program.status === 'completed' && (
+              <Badge className="mt-2">Recompensa Desbloqueada!</Badge>
+            )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
 
 const ProfilePage = () => {
   const { orders, favorites, profile, session, signOut, updateProfile } = useApp();
@@ -64,6 +120,8 @@ const ProfilePage = () => {
           </div>
         </CardContent>
       </Card>
+
+      <LoyaltyCard />
 
       <Card>
         <CardContent className="p-4">

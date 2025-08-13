@@ -105,3 +105,17 @@ export interface ProductReview {
   comment?: string;
   created_at: string;
 }
+
+export interface LoyaltyProgram {
+  id: string;
+  user_id: string;
+  depot_id: string;
+  target_purchases: number;
+  current_purchases: number;
+  reward_product_id: string;
+  reward_discount_percentage: number;
+  status: 'active' | 'completed';
+  profiles: { full_name: string };
+  products: { name: string };
+  depots: { name: string };
+}

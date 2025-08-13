@@ -35,6 +35,7 @@ import DepotManagerDashboard from "@/pages/depot-manager/Dashboard";
 import DepotManagerOrders from "@/pages/depot-manager/Orders";
 import DepotManagerProducts from "@/pages/depot-manager/Products";
 import DepotManagerSupport from "@/pages/depot-manager/Support";
+import DepotManagerLoyalty from "@/pages/depot-manager/Loyalty";
 
 const AppRoutes = () => {
   const { loading } = useApp();
@@ -82,6 +83,7 @@ const AppRoutes = () => {
         <Route path="orders" element={<DepotManagerOrders />} />
         <Route path="products" element={<DepotManagerProducts />} />
         <Route path="support" element={<DepotManagerSupport />} />
+        <Route path="loyalty" element={<DepotManagerLoyalty />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

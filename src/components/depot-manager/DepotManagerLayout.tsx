@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Package, ShoppingCart, ArrowLeft, MessageSquare, Menu } from 'lucide-react';
+import { Home, Package, ShoppingCart, ArrowLeft, MessageSquare, Menu, Star } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -13,6 +13,7 @@ const NavContent = () => {
     { path: '/depot-manager/orders', icon: ShoppingCart, label: 'Pedidos' },
     { path: '/depot-manager/products', icon: Package, label: 'Produtos' },
     { path: '/depot-manager/support', icon: MessageSquare, label: 'Suporte' },
+    { path: '/depot-manager/loyalty', icon: Star, label: 'Fidelidade' },
   ];
 
   const activeClass = "bg-red-100 text-red-700";
