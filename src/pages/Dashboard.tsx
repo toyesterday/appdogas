@@ -95,11 +95,11 @@ const Dashboard = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4">
-        <div className="flex items-center space-x-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
           <MapPin className="w-4 h-4 flex-shrink-0" />
           {addresses.length > 0 && selectedAddress ? (
             <Select value={selectedAddress.id} onValueChange={selectAddress}>
-              <SelectTrigger className="flex-1 bg-white/20 border-0 text-white focus:ring-0">
+              <SelectTrigger className="flex-1 bg-white/20 border-0 text-white focus:ring-0 min-w-[180px]">
                 <SelectValue placeholder="Selecione um endereço" />
               </SelectTrigger>
               <SelectContent>
@@ -120,7 +120,7 @@ const Dashboard = () => {
             <Link to={`/${depotSlug}/addresses`}>Gerenciar</Link>
           </Button>
         </div>
-        <div className="flex items-center space-x-4 text-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <div className="flex items-center space-x-1">
             <Clock className="w-4 h-4" />
             <span>Entrega em 45 min</span>
