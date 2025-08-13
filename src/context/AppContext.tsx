@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Product, CartItem, Order, Notification, ChatMessage, Profile, AppSettings } from '@/types';
+import { Product, CartItem, Order, Notification, ChatMessage, Profile, AppSettings, UserAddress } from '@/types';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface AppContextType {
@@ -14,6 +14,8 @@ interface AppContextType {
   notifications: Notification[];
   chatMessages: ChatMessage[];
   appSettings: AppSettings | null;
+  addresses: UserAddress[];
+  selectedAddress: UserAddress | null;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -22,11 +24,15 @@ interface AppContextType {
   placeOrder: () => Promise<string | null>;
   toggleFavorite: (productId: string) => Promise<void>;
   isFavorite: (productId:string) => boolean;
-  updateProfile: (data: { address?: string; full_name?: string }) => Promise<void>;
+  updateProfile: (data: { full_name?: string }) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
   getUnreadNotificationCount: () => number;
   sendMessage: (message: string) => Promise<void>;
   signOut: () => Promise<void>;
+  addAddress: (address: Omit<UserAddress, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateAddress: (addressId: string, data: Partial<UserAddress>) => Promise<void>;
+  deleteAddress: (addressId: string) => Promise<void>;
+  selectAddress: (addressId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -41,14 +47,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
 
   const fetchInitialData = async (userId: string) => {
-    const [ordersRes, favoritesRes, chatMessagesRes, notificationsRes, settingsRes] = await Promise.all([
+    const [ordersRes, favoritesRes, chatMessagesRes, notificationsRes, settingsRes, addressesRes] = await Promise.all([
       supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('favorites').select('product_id').eq('user_id', userId),
       supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
       supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-      supabase.from('app_settings').select('key, value')
+      supabase.from('app_settings').select('key, value'),
+      supabase.from('user_addresses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     ]);
 
     if (ordersRes.error) showError('Não foi possível carregar seus pedidos.');
@@ -69,6 +78,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return acc;
       }, {} as any);
       setAppSettings(settings);
+    }
+
+    if (addressesRes.error) {
+      showError('Não foi possível carregar seus endereços.');
+    } else {
+      const fetchedAddresses = addressesRes.data as UserAddress[];
+      setAddresses(fetchedAddresses);
+      const defaultAddress = fetchedAddresses.find(a => a.is_default) || fetchedAddresses[0] || null;
+      setSelectedAddress(defaultAddress);
     }
   };
 
@@ -109,6 +127,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setChatMessages([]);
         setNotifications([]);
         setAppSettings(null);
+        setAddresses([]);
+        setSelectedAddress(null);
       }
     });
 
@@ -148,7 +168,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [session]);
 
-  const updateProfile = async (data: { address?: string; full_name?: string }) => {
+  const updateProfile = async (data: { full_name?: string }) => {
     if (!session?.user) throw new Error('Usuário não logado');
     
     const updates = { id: session.user.id, ...data, updated_at: new Date().toISOString() };
@@ -194,7 +214,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getCartItemCount = () => cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const placeOrder = async () => {
-    if (!profile?.address) return "Por favor, informe seu endereço para continuar.";
+    if (!selectedAddress) return "Por favor, selecione um endereço de entrega.";
     if (!session?.user) return "Você precisa estar logado para fazer um pedido.";
     if (cart.length === 0) return "Seu carrinho está vazio.";
     
@@ -205,10 +225,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const newOrder = {
       user_id: session.user.id,
-      depot_id: cart[0].depot_id, // Assign order to the correct depot
+      depot_id: cart[0].depot_id,
       items: cart,
       total: finalTotal,
-      address: profile.address,
+      address: selectedAddress.address,
       status: 'preparing' as const,
       estimated_time: '45 min'
     };
@@ -290,11 +310,66 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }, 2000);
   };
 
+  const selectAddress = (addressId: string) => {
+    const address = addresses.find(a => a.id === addressId);
+    if (address) {
+      setSelectedAddress(address);
+      showSuccess(`Endereço '${address.name}' selecionado.`);
+    }
+  };
+
+  const addAddress = async (addressData: Omit<UserAddress, 'id' | 'user_id' | 'created_at'>) => {
+    if (!session?.user) return;
+    const { data, error } = await supabase.from('user_addresses').insert({ ...addressData, user_id: session.user.id }).select().single();
+    if (error) {
+      showError(`Falha ao adicionar endereço: ${error.message}`);
+    } else {
+      const newAddress = data as UserAddress;
+      const updatedAddresses = [newAddress, ...addresses.map(a => newAddress.is_default ? {...a, is_default: false} : a)];
+      setAddresses(updatedAddresses);
+      if (newAddress.is_default || addresses.length === 0) {
+        setSelectedAddress(newAddress);
+      }
+      showSuccess('Endereço adicionado com sucesso!');
+    }
+  };
+
+  const updateAddress = async (addressId: string, data: Partial<UserAddress>) => {
+    const { data: updatedData, error } = await supabase.from('user_addresses').update(data).eq('id', addressId).select().single();
+    if (error) {
+      showError(`Falha ao atualizar endereço: ${error.message}`);
+    } else {
+      const updatedAddress = updatedData as UserAddress;
+      setAddresses(prev => prev.map(a => a.id === addressId ? updatedAddress : (updatedAddress.is_default ? {...a, is_default: false} : a) ));
+      if (updatedAddress.is_default || selectedAddress?.id === addressId) {
+        setSelectedAddress(updatedAddress);
+      }
+      showSuccess('Endereço atualizado com sucesso!');
+    }
+  };
+
+  const deleteAddress = async (addressId: string) => {
+    const { error } = await supabase.from('user_addresses').delete().eq('id', addressId);
+    if (error) {
+      showError(`Falha ao excluir endereço: ${error.message}`);
+    } else {
+      const remainingAddresses = addresses.filter(a => a.id !== addressId);
+      setAddresses(remainingAddresses);
+      if (selectedAddress?.id === addressId) {
+        const newSelected = remainingAddresses.find(a => a.is_default) || remainingAddresses[0] || null;
+        setSelectedAddress(newSelected);
+      }
+      showSuccess('Endereço excluído com sucesso!');
+    }
+  };
+
   const value = {
     session, profile, loading, cart, orders, favorites, notifications, chatMessages, appSettings,
+    addresses, selectedAddress,
     addToCart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount,
     placeOrder, toggleFavorite, isFavorite, updateProfile, markNotificationAsRead,
     getUnreadNotificationCount, sendMessage, signOut,
+    addAddress, updateAddress, deleteAddress, selectAddress,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

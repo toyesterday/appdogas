@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { User, MapPin, CreditCard, Star, Bell, Phone, LogOut, Edit, Check } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -8,16 +8,17 @@ import { Input } from '@/components/ui/input';
 
 const ProfilePage = () => {
   const { orders, favorites, profile, session, signOut, updateProfile } = useApp();
+  const { depotSlug } = useParams<{ depotSlug: string }>();
   const navigate = useNavigate();
   const [isEditingName, setIsEditingName] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
 
   const menuItems = [
-    { icon: MapPin, label: 'Meus Endereços', path: '#', disabled: true },
+    { icon: MapPin, label: 'Meus Endereços', path: `/${depotSlug}/addresses`, disabled: false },
     { icon: CreditCard, label: 'Formas de Pagamento', path: '#', disabled: true },
     { icon: Star, label: 'Avaliar App', path: '#', disabled: true },
-    { icon: Bell, label: 'Notificações', path: '/notifications', disabled: false },
-    { icon: Phone, label: 'Suporte', path: '/support', disabled: false },
+    { icon: Bell, label: 'Notificações', path: `/${depotSlug}/notifications`, disabled: false },
+    { icon: Phone, label: 'Suporte', path: `/${depotSlug}/support`, disabled: false },
   ];
 
   const handleSaveName = async () => {

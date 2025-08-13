@@ -51,7 +51,6 @@ export interface Profile {
   id: string;
   full_name?: string;
   avatar_url?: string;
-  address?: string;
   updated_at?: string;
   role?: 'user' | 'admin' | 'depot_manager';
   depot_id?: string | null;
@@ -74,5 +73,14 @@ export interface Depot {
   slug: string;
   address: string | null;
   phone: string | null;
+  created_at: string;
+}
+
+export interface UserAddress {
+  id: string;
+  user_id: string;
+  name: string;
+  address: string;
+  is_default: boolean;
   created_at: string;
 }

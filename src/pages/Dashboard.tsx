@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { MapPin, Clock, Phone, Search, Filter, Star } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { useDepot } from '@/context/DepotContext';
@@ -8,22 +9,23 @@ import ProductCard from '@/components/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Dashboard = () => {
-  const { profile, updateProfile, appSettings } = useApp();
+  const { appSettings, addresses, selectedAddress, selectAddress } = useApp();
   const { depot } = useDepot();
+  const { depotSlug } = useParams();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
-  const [localAddress, setLocalAddress] = useState(profile?.address || '');
-
-  useEffect(() => {
-    if (profile?.address) {
-      setLocalAddress(profile.address);
-    }
-  }, [profile]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -46,16 +48,6 @@ const Dashboard = () => {
 
     fetchProducts();
   }, [depot.id]);
-
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalAddress(e.target.value);
-  };
-
-  const handleAddressBlur = () => {
-    if (localAddress !== profile?.address) {
-      updateProfile({ address: localAddress });
-    }
-  };
 
   const filteredProducts = allProducts.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -104,15 +96,29 @@ const Dashboard = () => {
     <div className="max-w-4xl mx-auto">
       <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4">
         <div className="flex items-center space-x-2 mb-2">
-          <MapPin className="w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Digite seu endereço completo..."
-            value={localAddress}
-            onChange={handleAddressChange}
-            onBlur={handleAddressBlur}
-            className="flex-1 bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/70 focus:outline-none focus:bg-white/30"
-          />
+          <MapPin className="w-4 h-4 flex-shrink-0" />
+          {addresses.length > 0 && selectedAddress ? (
+            <Select value={selectedAddress.id} onValueChange={selectAddress}>
+              <SelectTrigger className="flex-1 bg-white/20 border-0 text-white focus:ring-0">
+                <SelectValue placeholder="Selecione um endereço" />
+              </SelectTrigger>
+              <SelectContent>
+                {addresses.map(addr => (
+                  <SelectItem key={addr.id} value={addr.id}>
+                    <p className="font-semibold">{addr.name}</p>
+                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{addr.address}</p>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="flex-1 text-sm">
+              <p>Nenhum endereço cadastrado.</p>
+            </div>
+          )}
+          <Button asChild variant="secondary" size="sm" className="flex-shrink-0">
+            <Link to={`/${depotSlug}/addresses`}>Gerenciar</Link>
+          </Button>
         </div>
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-1">
