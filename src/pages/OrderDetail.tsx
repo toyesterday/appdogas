@@ -18,7 +18,7 @@ const getPaymentMethodInfo = (method: Order['payment_method']) => {
 };
 
 const OrderDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { depotSlug, id } = useParams<{ depotSlug: string; id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +78,7 @@ const OrderDetailPage = () => {
       <div className="p-4 text-center text-red-500">
         <p>{error}</p>
         <Button asChild variant="link">
-          <Link to="/orders">Voltar para Meus Pedidos</Link>
+          <Link to={`/${depotSlug}/orders`}>Voltar para Meus Pedidos</Link>
         </Button>
       </div>
     );
@@ -90,7 +90,7 @@ const OrderDetailPage = () => {
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-4">
       <Button asChild variant="ghost" className="pl-0">
-        <Link to="/orders"><ArrowLeft className="w-4 h-4 mr-2" /> Voltar</Link>
+        <Link to={`/${depotSlug}/orders`}><ArrowLeft className="w-4 h-4 mr-2" /> Voltar</Link>
       </Button>
 
       <Card>
