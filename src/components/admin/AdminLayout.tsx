@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Package, ShoppingCart, ArrowLeft, Settings, Building } from 'lucide-react';
+import { Home, Package, ShoppingCart, ArrowLeft, Settings, Building, Users } from 'lucide-react';
 
 const AdminLayout = () => {
   const navItems = [
@@ -7,6 +7,7 @@ const AdminLayout = () => {
     { path: '/admin/products', icon: Package, label: 'Produtos' },
     { path: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
     { path: '/admin/depots', icon: Building, label: 'Depósitos' },
+    { path: '/admin/users', icon: Users, label: 'Usuários' },
     { path: '/admin/settings', icon: Settings, label: 'Configurações' },
   ];
 

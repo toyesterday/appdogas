@@ -25,6 +25,7 @@ import ProductsAdmin from "@/pages/admin/ProductsAdmin";
 import OrdersAdmin from "@/pages/admin/OrdersAdmin";
 import SettingsAdmin from "@/pages/admin/SettingsAdmin";
 import DepotsAdmin from "@/pages/admin/DepotsAdmin";
+import UsersAdmin from "@/pages/admin/UsersAdmin";
 
 const AppRoutes = () => {
   const { session, loading } = useApp();
@@ -60,6 +61,7 @@ const AppRoutes = () => {
         <Route path="products" element={<ProductsAdmin />} />
         <Route path="orders" element={<OrdersAdmin />} />
         <Route path="depots" element={<DepotsAdmin />} />
+        <Route path="users" element={<UsersAdmin />} />
         <Route path="settings" element={<SettingsAdmin />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
