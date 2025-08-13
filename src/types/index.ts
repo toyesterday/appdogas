@@ -44,6 +44,7 @@ export interface Notification {
 export interface ChatMessage {
   id: string;
   user_id: string;
+  depot_id: string;
   message: string;
   sender: 'user' | 'support';
   created_at: string;

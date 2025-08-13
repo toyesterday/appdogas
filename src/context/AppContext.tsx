@@ -27,7 +27,8 @@ interface AppContextType {
   updateProfile: (data: { full_name?: string }) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
   getUnreadNotificationCount: () => number;
-  sendMessage: (message: string) => Promise<void>;
+  fetchChatMessages: (depotId: string) => Promise<void>;
+  sendMessage: (message: string, depotId: string) => Promise<void>;
   signOut: () => Promise<void>;
   addAddress: (address: Omit<UserAddress, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
   updateAddress: (addressId: string, data: Partial<UserAddress>) => Promise<void>;
@@ -51,10 +52,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
 
   const fetchInitialData = async (userId: string) => {
-    const [ordersRes, favoritesRes, chatMessagesRes, notificationsRes, settingsRes, addressesRes] = await Promise.all([
+    const [ordersRes, favoritesRes, notificationsRes, settingsRes, addressesRes] = await Promise.all([
       supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('favorites').select('product_id').eq('user_id', userId),
-      supabase.from('chat_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
       supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('app_settings').select('key, value'),
       supabase.from('user_addresses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
@@ -65,9 +65,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     if (favoritesRes.error) showError('Não foi possível carregar seus favoritos.');
     else setFavorites(favoritesRes.data.map(fav => fav.product_id));
-
-    if (chatMessagesRes.error) showError('Não foi possível carregar o histórico de chat.');
-    else setChatMessages(chatMessagesRes.data as ChatMessage[]);
 
     if (notificationsRes.error) showError('Não foi possível carregar as notificações.');
     else setNotifications(notificationsRes.data as Notification[]);
@@ -161,10 +158,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
       )
       .subscribe();
+      
+    const chatChannel = supabase.channel(`chat:${session.user.id}`)
+      .on<ChatMessage>(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `user_id=eq.${session.user.id}` },
+        (payload) => {
+          setChatMessages(prev => [...prev, payload.new]);
+        }
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(chatChannel);
     };
   }, [session]);
 
@@ -285,31 +293,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const getUnreadNotificationCount = () => notifications.filter(n => !n.read).length;
 
-  const sendMessage = async (message: string) => {
+  const fetchChatMessages = async (depotId: string) => {
+    if (!session?.user) return;
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('depot_id', depotId)
+      .order('created_at', { ascending: true });
+    
+    if (error) showError('Não foi possível carregar o histórico de chat.');
+    else setChatMessages(data as ChatMessage[]);
+  };
+
+  const sendMessage = async (message: string, depotId: string) => {
     if (!session?.user) {
       showError('Você precisa estar logado para enviar mensagens.');
       return;
     }
-    const userMessage = { user_id: session.user.id, message, sender: 'user' as const };
-    const { data: newUserMessage, error: userError } = await supabase.from('chat_messages').insert(userMessage).select().single();
-    if (userError) {
+    const userMessage = { 
+      user_id: session.user.id, 
+      message, 
+      sender: 'user' as const,
+      depot_id: depotId,
+    };
+    const { error } = await supabase.from('chat_messages').insert(userMessage);
+    if (error) {
       showError('Não foi possível enviar sua mensagem.');
       return;
     }
-    setChatMessages(prev => [...prev, newUserMessage as ChatMessage]);
-
-    setTimeout(async () => {
-      const responses = [
-        'Obrigado pela mensagem! Em breve um atendente entrará em contato.',
-        'Estamos verificando sua solicitação. Aguarde um momento.',
-        'Sua mensagem foi recebida. Nossa equipe já está cuidando do seu caso.'
-      ];
-      const supportMessageText = responses[Math.floor(Math.random() * responses.length)];
-      const supportMessage = { user_id: session.user.id, message: supportMessageText, sender: 'support' as const };
-      const { data: newSupportMessage, error: supportError } = await supabase.from('chat_messages').insert(supportMessage).select().single();
-      if (supportError) return;
-      setChatMessages(prev => [...prev, newSupportMessage as ChatMessage]);
-    }, 2000);
+    // A mensagem será adicionada localmente via subscription
   };
 
   const selectAddress = (addressId: string) => {
@@ -373,7 +386,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addToCart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount,
     placeOrder, toggleFavorite, isFavorite, updateProfile, markNotificationAsRead,
     getUnreadNotificationCount, sendMessage, signOut,
-    addAddress, updateAddress, deleteAddress, selectAddress,
+    addAddress, updateAddress, deleteAddress, selectAddress, fetchChatMessages,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
