@@ -319,10 +319,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addAddress = async (addressData: Omit<UserAddress, 'id' | 'user_id' | 'created_at'>) => {
-    if (!session?.user) return;
+    if (!session?.user) throw new Error("Usuário não autenticado.");
     const { data, error } = await supabase.from('user_addresses').insert({ ...addressData, user_id: session.user.id }).select().single();
     if (error) {
       showError(`Falha ao adicionar endereço: ${error.message}`);
+      throw error;
     } else {
       const newAddress = data as UserAddress;
       const updatedAddresses = [newAddress, ...addresses.map(a => newAddress.is_default ? {...a, is_default: false} : a)];
@@ -338,6 +339,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const { data: updatedData, error } = await supabase.from('user_addresses').update(data).eq('id', addressId).select().single();
     if (error) {
       showError(`Falha ao atualizar endereço: ${error.message}`);
+      throw error;
     } else {
       const updatedAddress = updatedData as UserAddress;
       setAddresses(prev => prev.map(a => a.id === addressId ? updatedAddress : (updatedAddress.is_default ? {...a, is_default: false} : a) ));

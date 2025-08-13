@@ -44,18 +44,23 @@ const AddressFormDialog = ({ address, open, onOpenChange }: AddressFormDialogPro
 
   const onSubmit = async (values: AddressFormData) => {
     setIsSubmitting(true);
-    if (address) {
-      await updateAddress(address.id, values);
-    } else {
-      // Criando um novo objeto explicitamente para garantir que o tipo seja inferido corretamente.
-      await addAddress({
-        name: values.name,
-        address: values.address,
-        is_default: values.is_default,
-      });
+    try {
+      if (address) {
+        await updateAddress(address.id, values);
+      } else {
+        await addAddress({
+          name: values.name,
+          address: values.address,
+          is_default: values.is_default,
+        });
+      }
+      onOpenChange(false); // Fecha o diálogo apenas em caso de sucesso
+    } catch (error) {
+      console.error("Falha ao salvar endereço:", error);
+      // A notificação de erro já é exibida pelo AppContext
+    } finally {
+      setIsSubmitting(false); // Garante que o estado de "salvando" seja desativado
     }
-    setIsSubmitting(false);
-    onOpenChange(false);
   };
 
   return (
