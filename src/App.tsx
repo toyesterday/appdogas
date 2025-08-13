@@ -26,6 +26,7 @@ import OrdersAdmin from "@/pages/admin/OrdersAdmin";
 import SettingsAdmin from "@/pages/admin/SettingsAdmin";
 import DepotsAdmin from "@/pages/admin/DepotsAdmin";
 import UsersAdmin from "@/pages/admin/UsersAdmin";
+import BillingAdmin from "@/pages/admin/BillingAdmin";
 
 // Depot Manager imports
 import DepotManagerGuard from "@/components/depot-manager/DepotManagerGuard";
@@ -36,7 +37,7 @@ import DepotManagerProducts from "@/pages/depot-manager/Products";
 import DepotManagerSupport from "@/pages/depot-manager/Support";
 
 const AppRoutes = () => {
-  const { session, loading, profile } = useApp();
+  const { loading } = useApp();
 
   if (loading) {
     return <div className="h-screen w-screen flex items-center justify-center"><p>Carregando...</p></div>;
@@ -70,6 +71,7 @@ const AppRoutes = () => {
         <Route path="orders" element={<OrdersAdmin />} />
         <Route path="depots" element={<DepotsAdmin />} />
         <Route path="users" element={<UsersAdmin />} />
+        <Route path="billing" element={<BillingAdmin />} />
         <Route path="settings" element={<SettingsAdmin />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
