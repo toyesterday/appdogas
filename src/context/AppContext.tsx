@@ -166,13 +166,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = (product: Product) => {
     setCart(prev => {
+      if (prev.length > 0 && prev[0].depot_id !== product.depot_id) {
+        showError("Você só pode adicionar produtos do mesmo depósito ao carrinho.");
+        return prev;
+      }
+
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
         return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
+      showSuccess(`${product.name} adicionado ao carrinho!`);
       return [...prev, { ...product, quantity: 1 }];
     });
-    showSuccess(`${product.name} adicionado ao carrinho!`);
   };
 
   const removeFromCart = (productId: string) => { setCart(prev => prev.filter(item => item.id !== productId)); };
@@ -191,6 +196,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const placeOrder = async () => {
     if (!profile?.address) return "Por favor, informe seu endereço para continuar.";
     if (!session?.user) return "Você precisa estar logado para fazer um pedido.";
+    if (cart.length === 0) return "Seu carrinho está vazio.";
     
     const total = getCartTotal();
     const threshold = appSettings?.free_shipping_threshold || 80;
@@ -199,6 +205,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const newOrder = {
       user_id: session.user.id,
+      depot_id: cart[0].depot_id, // Assign order to the correct depot
       items: cart,
       total: finalTotal,
       address: profile.address,

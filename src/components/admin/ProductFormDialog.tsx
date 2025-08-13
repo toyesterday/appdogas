@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
-import { Product } from '@/types';
+import { Product, Depot } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,10 +25,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showError, showSuccess } from '@/utils/toast';
 
 const productFormSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
+  depot_id: z.string().uuid({ message: "Por favor, selecione um depósito." }),
   brand: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }),
@@ -49,6 +51,7 @@ interface ProductFormDialogProps {
 
 const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFormDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [depots, setDepots] = useState<Depot[]>([]);
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -64,17 +67,23 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
   });
 
   useEffect(() => {
+    const fetchDepots = async () => {
+      const { data, error } = await supabase.from('depots').select('id, name');
+      if (error) {
+        showError("Não foi possível carregar os depósitos.");
+      } else {
+        setDepots(data as Depot[]);
+      }
+    };
+    fetchDepots();
+  }, []);
+
+  useEffect(() => {
     if (open) {
       if (product) {
         form.reset({
-          name: product.name,
-          brand: product.brand,
-          description: product.description,
-          price: product.price,
-          originalPrice: product.originalPrice,
-          image: product.image,
-          promotion: product.promotion,
-          featured: !!product.featured,
+          ...product,
+          depot_id: product.depot_id || undefined,
         });
       } else {
         form.reset(form.formState.defaultValues);
@@ -112,6 +121,28 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+            <FormField
+              control={form.control}
+              name="depot_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Depósito</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o depósito deste produto" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {depots.map(depot => (
+                        <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="name"

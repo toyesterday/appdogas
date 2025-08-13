@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Clock, Phone, Search, Filter, Star } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { useDepot } from '@/context/DepotContext';
 import { Product } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import ProductCard from '@/components/ProductCard';
@@ -10,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const Dashboard = () => {
   const { profile, updateProfile, appSettings } = useApp();
+  const { depot } = useDepot();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,10 +27,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      if (!depot.id) return;
       setLoading(true);
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('depot_id', depot.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -41,7 +45,7 @@ const Dashboard = () => {
     };
 
     fetchProducts();
-  }, []);
+  }, [depot.id]);
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalAddress(e.target.value);
