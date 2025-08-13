@@ -6,8 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { showError, showSuccess } from '@/utils/toast';
 
-type AdminOrder = Order & {
-  user_name: string;
+type AdminOrderView = {
+  id: string;
+  created_at: string;
+  total: number;
+  status: Order['status'];
+  user_name: string | null;
 };
 
 const statusOptions: { value: Order['status']; label: string; variant: 'default' | 'secondary' | 'outline' }[] = [
@@ -17,28 +21,21 @@ const statusOptions: { value: Order['status']; label: string; variant: 'default'
 ];
 
 const OrdersAdmin = () => {
-  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [orders, setOrders] = useState<AdminOrderView[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
     setLoading(true);
-    // Fix: Made the join between orders and profiles explicit by specifying the foreign key column `user_id`.
     const { data, error } = await supabase
-      .from('orders')
-      .select('*, profile:profiles!user_id(full_name)')
+      .from('admin_orders_view')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
       showError('Falha ao carregar pedidos.');
       console.error('Error fetching orders:', error);
     } else {
-      const typedData = data as (Order & { profile: { full_name: string } | null })[];
-      
-      const formattedData: AdminOrder[] = typedData.map(d => ({
-        ...d,
-        user_name: d.profile?.full_name || 'N/A'
-      }));
-      setOrders(formattedData);
+      setOrders(data as AdminOrderView[]);
     }
     setLoading(false);
   };
@@ -57,7 +54,7 @@ const OrdersAdmin = () => {
       showError('Falha ao atualizar status.');
     } else {
       showSuccess('Status do pedido atualizado!');
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      fetchOrders(); // Recarrega a lista para mostrar a mudança
     }
   };
 
@@ -82,7 +79,7 @@ const OrdersAdmin = () => {
               orders.map(order => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono">#{order.id.slice(-6)}</TableCell>
-                  <TableCell>{order.user_name}</TableCell>
+                  <TableCell>{order.user_name || 'N/A'}</TableCell>
                   <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>R$ {order.total.toFixed(2).replace('.', ',')}</TableCell>
                   <TableCell>
