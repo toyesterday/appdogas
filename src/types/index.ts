@@ -24,7 +24,7 @@ export interface Order {
   items: CartItem[];
   total: number;
   address: string;
-  status: 'preparing' | 'delivering' | 'delivered';
+  status: 'preparing' | 'delivering' | 'delivered' | 'canceled';
   payment_method: 'pix' | 'card' | 'money';
   change_for?: string | null;
   created_at: string;
