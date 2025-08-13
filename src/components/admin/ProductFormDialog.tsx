@@ -49,6 +49,33 @@ interface ProductFormDialogProps {
   onSuccess: () => void;
 }
 
+const productTemplates = [
+  {
+    name: 'Gás de Cozinha P13',
+    brand: 'Supergásbras',
+    description: 'O botijão ideal para sua casa. Qualidade e segurança garantidas.',
+    image: '/images/gas-13kg.png',
+  },
+  {
+    name: 'Água Mineral 20L',
+    brand: 'Fonte Pura',
+    description: 'Água pura e cristalina para matar sua sede. Galão retornável.',
+    image: '/images/agua.png',
+  },
+  {
+    name: 'Gás Industrial P20',
+    brand: 'Supergásbras',
+    description: 'Ideal para empilhadeiras e uso industrial.',
+    image: '/images/gas-20kg.png',
+  },
+  {
+    name: 'Gás Industrial P45',
+    brand: 'Supergásbras',
+    description: 'Para comércios e condomínios com alto consumo.',
+    image: '/images/gas-45kg.png',
+  },
+];
+
 const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFormDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [depots, setDepots] = useState<Depot[]>([]);
@@ -91,6 +118,16 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
     }
   }, [product, open, form]);
 
+  const handleTemplateChange = (templateName: string) => {
+    const template = productTemplates.find(t => t.name === templateName);
+    if (template) {
+      form.setValue('name', template.name, { shouldValidate: true });
+      form.setValue('brand', template.brand);
+      form.setValue('description', template.description);
+      form.setValue('image', template.image);
+    }
+  };
+
   const onSubmit = async (values: ProductFormData) => {
     setIsSubmitting(true);
     const productData = {
@@ -121,6 +158,28 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+            {!product && (
+              <FormItem>
+                <FormLabel>Modelo de Produto (Opcional)</FormLabel>
+                <Select onValueChange={handleTemplateChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um modelo para preencher" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {productTemplates.map(template => (
+                      <SelectItem key={template.name} value={template.name}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Escolher um modelo preencherá os campos automaticamente.
+                </FormDescription>
+              </FormItem>
+            )}
             <FormField
               control={form.control}
               name="depot_id"
