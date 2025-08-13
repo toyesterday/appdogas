@@ -44,21 +44,28 @@ const LoyaltyProgramFormDialog = ({ program, open, onOpenChange, onSuccess }: Lo
       // Fetch customers (users who have ordered from this depot)
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('user_id, profiles(id, full_name)')
+        .select('user_id')
         .eq('depot_id', profile.depot_id);
       
-      if (ordersError) showError("Erro ao carregar clientes.");
-      else {
-        const customerMap = new Map<string, Profile>();
-        ordersData?.forEach(order => {
-            // Supabase might infer a one-to-many relationship, so we handle both object and array cases.
-            const profile = Array.isArray(order.profiles) ? order.profiles[0] : order.profiles;
-            if (profile) {
-                customerMap.set(profile.id, profile as Profile);
-            }
-        });
-        const uniqueCustomers = Array.from(customerMap.values());
-        setCustomers(uniqueCustomers);
+      if (ordersError) {
+        showError("Erro ao carregar clientes.");
+        return;
+      }
+
+      if (ordersData && ordersData.length > 0) {
+        const userIds = [...new Set(ordersData.map(o => o.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', userIds);
+
+        if (profilesError) {
+          showError("Erro ao carregar dados dos clientes.");
+        } else {
+          setCustomers(profilesData as Profile[]);
+        }
+      } else {
+        setCustomers([]);
       }
 
       // Fetch products from this depot

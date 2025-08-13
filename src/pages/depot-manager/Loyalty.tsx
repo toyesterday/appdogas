@@ -11,24 +11,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { showError, showSuccess } from '@/utils/toast';
 import LoyaltyProgramFormDialog from '@/components/depot-manager/LoyaltyProgramFormDialog';
 
+type LoyaltyProgramView = Omit<LoyaltyProgram, 'profiles' | 'products' | 'depots'> & {
+  full_name: string;
+  product_name: string;
+};
+
 const DepotManagerLoyalty = () => {
-  const [programs, setPrograms] = useState<LoyaltyProgram[]>([]);
+  const [programs, setPrograms] = useState<LoyaltyProgramView[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProgram, setEditingProgram] = useState<LoyaltyProgram | null>(null);
+  const [editingProgram, setEditingProgram] = useState<LoyaltyProgramView | null>(null);
   const { profile } = useApp();
 
   const fetchPrograms = async () => {
     if (!profile?.depot_id) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('loyalty_programs')
-      .select('*, profiles(full_name), products(name)')
-      .eq('depot_id', profile.depot_id)
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase.rpc('get_depot_loyalty_programs');
       
     if (error) {
       showError('Falha ao carregar programas de fidelidade.');
+      console.error(error);
     } else {
       setPrograms(data as any);
     }
@@ -57,7 +59,7 @@ const DepotManagerLoyalty = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (program: LoyaltyProgram) => {
+  const handleEdit = (program: LoyaltyProgramView) => {
     setEditingProgram(program);
     setIsDialogOpen(true);
   };
@@ -95,7 +97,7 @@ const DepotManagerLoyalty = () => {
             ) : (
               programs.map(program => (
                 <TableRow key={program.id}>
-                  <TableCell className="font-medium">{program.profiles.full_name}</TableCell>
+                  <TableCell className="font-medium">{program.full_name}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Progress value={(program.current_purchases / program.target_purchases) * 100} className="w-24" />
@@ -103,11 +105,11 @@ const DepotManagerLoyalty = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {program.reward_discount_percentage}% em {program.products.name}
+                    {program.reward_discount_percentage}% em {program.product_name}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={program.status === 'active' ? 'secondary' : 'default'}>
-                      {program.status === 'active' ? 'Ativo' : 'Concluído'}
+                    <Badge variant={program.status === 'active' ? 'secondary' : program.status === 'completed' ? 'default' : 'outline'}>
+                      {program.status === 'active' ? 'Ativo' : program.status === 'completed' ? 'Concluído' : 'Resgatado'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -131,7 +133,7 @@ const DepotManagerLoyalty = () => {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSuccess={fetchPrograms}
-        program={editingProgram}
+        program={editingProgram as any}
       />
     </div>
   );
