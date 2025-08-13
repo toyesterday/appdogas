@@ -6,7 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { showError, showSuccess } from '@/utils/toast';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 type AdminOrderView = {
   id: string;
@@ -91,6 +93,19 @@ const DepotManagerOrders = () => {
     }
   };
 
+  const handleDelete = async (orderId: string) => {
+    if (!confirm('Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    if (error) {
+      showError('Falha ao cancelar o pedido.');
+    } else {
+      showSuccess('Pedido cancelado com sucesso!');
+      fetchOrders();
+    }
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Pedidos do Depósito</h1>
@@ -104,11 +119,12 @@ const DepotManagerOrders = () => {
               <TableHead>Total</TableHead>
               <TableHead>Pagamento</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead><span className="sr-only">Ações</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="text-center">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center">Carregando...</TableCell></TableRow>
             ) : (
               orders.map(order => (
                 <TableRow key={order.id}>
@@ -130,6 +146,24 @@ const DepotManagerOrders = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Abrir menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(order.id)}
+                          className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                        >
+                          Cancelar Pedido
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
