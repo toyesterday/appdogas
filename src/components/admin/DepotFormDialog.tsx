@@ -31,6 +31,7 @@ const depotFormSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: "Slug inválido. Use apenas letras minúsculas, números e hífens." }),
   address: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
+  logo_url: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().nullable(),
 });
 
 type DepotFormData = z.infer<typeof depotFormSchema>;
@@ -54,6 +55,7 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
       slug: '',
       address: '',
       phone: '',
+      logo_url: '',
     },
   });
 
@@ -73,6 +75,7 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
           slug: depot.slug,
           address: depot.address,
           phone: depot.phone,
+          logo_url: depot.logo_url,
         });
       } else {
         form.reset(form.formState.defaultValues);
@@ -153,6 +156,20 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
                 <FormItem>
                   <FormLabel>Telefone</FormLabel>
                   <FormControl><Input placeholder="(31) 99999-9999" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="logo_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL do Logo</FormLabel>
+                  <FormControl><Input placeholder="https://example.com/logo.png" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormDescription>
+                    Opcional. A imagem que representa o depósito.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

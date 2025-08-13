@@ -51,11 +51,17 @@ const DepotSelectionPage = () => {
             {depots.map((depot, index) => (
               <AnimatedSection key={depot.id} delay={`${index * 100}ms`}>
                 <Link to={`/${depot.slug}/dashboard`}>
-                  <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                    <CardHeader>
+                  <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+                    <CardHeader className="flex-grow">
                       <CardTitle className="flex items-center space-x-3">
-                        <Building className="w-6 h-6 text-red-600" />
-                        <span>{depot.name}</span>
+                        {depot.logo_url ? (
+                          <img src={depot.logo_url} alt={`${depot.name} logo`} className="w-10 h-10 object-contain rounded-md" />
+                        ) : (
+                          <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-md">
+                            <Building className="w-6 h-6 text-red-600" />
+                          </div>
+                        )}
+                        <span className="text-xl">{depot.name}</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
