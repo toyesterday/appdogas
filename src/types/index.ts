@@ -95,3 +95,13 @@ export interface UserAddress {
   is_default: boolean;
   created_at: string;
 }
+
+export interface ProductReview {
+  id: string;
+  product_id: string;
+  user_id: string;
+  order_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+}

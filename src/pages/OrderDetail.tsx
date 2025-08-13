@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Order } from '@/types';
+import { Order, CartItem } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard } from 'lucide-react';
+import { ArrowLeft, CreditCard, Star } from 'lucide-react';
 import OrderTracker from '@/components/OrderTracker';
+import ReviewFormDialog from '@/components/ReviewFormDialog';
 
 const getPaymentMethodInfo = (method: Order['payment_method']) => {
   switch (method) {
@@ -22,27 +23,38 @@ const OrderDetailPage = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState<string[]>([]);
+  const [reviewingProduct, setReviewingProduct] = useState<CartItem | null>(null);
+
+  const fetchOrderAndReviews = async () => {
+    if (!id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      setError('Pedido não encontrado.');
+      console.error(error);
+    } else {
+      setOrder(data);
+      if (data.status === 'delivered') {
+        const { data: reviews, error: reviewError } = await supabase
+          .from('product_reviews')
+          .select('product_id')
+          .eq('order_id', id);
+        if (!reviewError) {
+          setReviewedProductIds(reviews.map(r => r.product_id));
+        }
+      }
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      if (!id) return;
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        setError('Pedido não encontrado.');
-        console.error(error);
-      } else {
-        setOrder(data);
-      }
-      setLoading(false);
-    };
-
-    fetchOrder();
+    fetchOrderAndReviews();
   }, [id]);
 
   useEffect(() => {
@@ -54,6 +66,9 @@ const OrderDetailPage = () => {
         { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` },
         (payload) => {
           setOrder(payload.new);
+          if (payload.new.status === 'delivered') {
+            fetchOrderAndReviews();
+          }
         }
       )
       .subscribe();
@@ -137,16 +152,37 @@ const OrderDetailPage = () => {
         </CardHeader>
         <CardContent>
           {order.items.map(item => (
-            <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-none">
-              <div>
+            <div key={item.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b last:border-none">
+              <div className="mb-2 sm:mb-0">
                 <p className="font-semibold">{item.name}</p>
                 <p className="text-sm text-gray-500">{item.quantity} x R$ {item.price.toFixed(2).replace('.', ',')}</p>
               </div>
-              <p>R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}</p>
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <p className="flex-1 sm:flex-none">R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}</p>
+                {order.status === 'delivered' && (
+                  reviewedProductIds.includes(item.id) ? (
+                    <Button variant="outline" disabled className="w-full sm:w-auto">Avaliação Enviada</Button>
+                  ) : (
+                    <Button variant="outline" onClick={() => setReviewingProduct(item)} className="w-full sm:w-auto">
+                      <Star className="w-4 h-4 mr-2" /> Avaliar Produto
+                    </Button>
+                  )
+                )}
+              </div>
             </div>
           ))}
         </CardContent>
       </Card>
+
+      {reviewingProduct && (
+        <ReviewFormDialog
+          open={!!reviewingProduct}
+          onOpenChange={() => setReviewingProduct(null)}
+          product={reviewingProduct}
+          orderId={order.id}
+          onSuccess={fetchOrderAndReviews}
+        />
+      )}
     </div>
   );
 };
