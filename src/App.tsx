@@ -33,6 +33,7 @@ import DepotManagerLayout from "@/components/depot-manager/DepotManagerLayout";
 import DepotManagerDashboard from "@/pages/depot-manager/Dashboard";
 import DepotManagerOrders from "@/pages/depot-manager/Orders";
 import DepotManagerProducts from "@/pages/depot-manager/Products";
+import DepotManagerSupport from "@/pages/depot-manager/Support";
 
 const AppRoutes = () => {
   const { session, loading, profile } = useApp();
@@ -82,6 +83,7 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<DepotManagerDashboard />} />
         <Route path="orders" element={<DepotManagerOrders />} />
         <Route path="products" element={<DepotManagerProducts />} />
+        <Route path="support" element={<DepotManagerSupport />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

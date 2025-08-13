@@ -50,6 +50,13 @@ export interface ChatMessage {
   created_at: string;
 }
 
+export interface Conversation {
+  user_id: string;
+  full_name: string;
+  last_message: string;
+  last_message_at: string;
+}
+
 export interface Profile {
   id: string;
   full_name?: string;

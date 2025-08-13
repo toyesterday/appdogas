@@ -29,6 +29,7 @@ interface AppContextType {
   getUnreadNotificationCount: () => number;
   fetchChatMessages: (depotId: string) => Promise<void>;
   sendMessage: (message: string, depotId: string) => Promise<void>;
+  sendSupportMessage: (message: string, depotId: string, userId: string) => Promise<void>;
   signOut: () => Promise<void>;
   addAddress: (address: Omit<UserAddress, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
   updateAddress: (addressId: string, data: Partial<UserAddress>) => Promise<void>;
@@ -159,7 +160,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       )
       .subscribe();
       
-    const chatChannel = supabase.channel(`chat:${session.user.id}`)
+    const chatChannel = supabase.channel(`chat:user:${session.user.id}`)
       .on<ChatMessage>(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `user_id=eq.${session.user.id}` },
@@ -320,9 +321,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.from('chat_messages').insert(userMessage);
     if (error) {
       showError('Não foi possível enviar sua mensagem.');
+    }
+  };
+
+  const sendSupportMessage = async (message: string, depotId: string, userId: string) => {
+    if (!session?.user || profile?.role !== 'depot_manager') {
+      showError('Ação não permitida.');
       return;
     }
-    // A mensagem será adicionada localmente via subscription
+    const supportMessage = {
+      user_id: userId,
+      depot_id: depotId,
+      message,
+      sender: 'support' as const,
+    };
+    const { error } = await supabase.from('chat_messages').insert(supportMessage);
+    if (error) {
+      showError('Não foi possível enviar sua mensagem.');
+    }
   };
 
   const selectAddress = (addressId: string) => {
@@ -386,7 +402,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addToCart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount,
     placeOrder, toggleFavorite, isFavorite, updateProfile, markNotificationAsRead,
     getUnreadNotificationCount, sendMessage, signOut,
-    addAddress, updateAddress, deleteAddress, selectAddress, fetchChatMessages,
+    addAddress, updateAddress, deleteAddress, selectAddress, fetchChatMessages, sendSupportMessage,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

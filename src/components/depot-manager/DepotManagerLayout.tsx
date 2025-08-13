@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Package, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Home, Package, ShoppingCart, ArrowLeft, MessageSquare } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 const DepotManagerLayout = () => {
@@ -9,6 +9,7 @@ const DepotManagerLayout = () => {
     { path: '/depot-manager/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/depot-manager/orders', icon: ShoppingCart, label: 'Pedidos' },
     { path: '/depot-manager/products', icon: Package, label: 'Produtos' },
+    { path: '/depot-manager/support', icon: MessageSquare, label: 'Suporte' },
   ];
 
   const activeClass = "bg-red-100 text-red-700";
