@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { CreditCard } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ interface PaymentDialogProps {
 const PaymentDialog = ({ open, onOpenChange }: PaymentDialogProps) => {
   const { placeOrder } = useApp();
   const navigate = useNavigate();
+  const { depotSlug } = useParams<{ depotSlug: string }>();
   const [paymentMethod, setPaymentMethod] = useState<Order['payment_method']>('pix');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
@@ -34,7 +35,7 @@ const PaymentDialog = ({ open, onOpenChange }: PaymentDialogProps) => {
     } else {
       showSuccess('Pedido realizado com sucesso!');
       onOpenChange(false);
-      navigate('/orders');
+      navigate(`/${depotSlug}/orders`);
     }
     setIsPlacingOrder(false);
   };
