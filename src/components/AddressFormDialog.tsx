@@ -47,7 +47,12 @@ const AddressFormDialog = ({ address, open, onOpenChange }: AddressFormDialogPro
     if (address) {
       await updateAddress(address.id, values);
     } else {
-      await addAddress(values);
+      // Criando um novo objeto explicitamente para garantir que o tipo seja inferido corretamente.
+      await addAddress({
+        name: values.name,
+        address: values.address,
+        is_default: values.is_default,
+      });
     }
     setIsSubmitting(false);
     onOpenChange(false);
