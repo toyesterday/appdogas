@@ -9,9 +9,21 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/depots');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.role === 'admin') {
+          navigate('/admin');
+        } else if (profile?.role === 'depot_manager') {
+          navigate('/depot-manager');
+        } else {
+          navigate('/depots');
+        }
       }
     });
 

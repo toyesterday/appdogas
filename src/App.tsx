@@ -27,8 +27,15 @@ import SettingsAdmin from "@/pages/admin/SettingsAdmin";
 import DepotsAdmin from "@/pages/admin/DepotsAdmin";
 import UsersAdmin from "@/pages/admin/UsersAdmin";
 
+// Depot Manager imports
+import DepotManagerGuard from "@/components/depot-manager/DepotManagerGuard";
+import DepotManagerLayout from "@/components/depot-manager/DepotManagerLayout";
+import DepotManagerDashboard from "@/pages/depot-manager/Dashboard";
+import DepotManagerOrders from "@/pages/depot-manager/Orders";
+import DepotManagerProducts from "@/pages/depot-manager/Products";
+
 const AppRoutes = () => {
-  const { session, loading } = useApp();
+  const { session, loading, profile } = useApp();
 
   if (loading) {
     return <div className="h-screen w-screen flex items-center justify-center"><p>Carregando...</p></div>;
@@ -39,7 +46,11 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/depots" element={<DepotSelectionPage />} />
-      <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/depots" />} />
+      <Route path="/login" element={!session ? <LoginPage /> : <Navigate to={
+          profile?.role === 'admin' ? '/admin' :
+          profile?.role === 'depot_manager' ? '/depot-manager' :
+          '/depots'
+        } />} />
 
       {/* Depot-specific Routes */}
       <Route path="/:depotSlug" element={<DepotLayout />}>
@@ -63,6 +74,14 @@ const AppRoutes = () => {
         <Route path="depots" element={<DepotsAdmin />} />
         <Route path="users" element={<UsersAdmin />} />
         <Route path="settings" element={<SettingsAdmin />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
+      </Route>
+
+      {/* Depot Manager Routes */}
+      <Route path="/depot-manager" element={<DepotManagerGuard><DepotManagerLayout /></DepotManagerGuard>}>
+        <Route path="dashboard" element={<DepotManagerDashboard />} />
+        <Route path="orders" element={<DepotManagerOrders />} />
+        <Route path="products" element={<DepotManagerProducts />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

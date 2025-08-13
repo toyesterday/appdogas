@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, Depot } from '@/types';
+import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -79,6 +80,7 @@ const productTemplates = [
 const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFormDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [depots, setDepots] = useState<Depot[]>([]);
+  const { profile } = useApp();
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -102,8 +104,10 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
         setDepots(data as Depot[]);
       }
     };
-    fetchDepots();
-  }, []);
+    if (profile?.role === 'admin') {
+      fetchDepots();
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (open) {
@@ -114,9 +118,12 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
         });
       } else {
         form.reset(form.formState.defaultValues);
+        if (profile?.role === 'depot_manager' && profile.depot_id) {
+          form.setValue('depot_id', profile.depot_id);
+        }
       }
     }
-  }, [product, open, form]);
+  }, [product, open, form, profile]);
 
   const handleTemplateChange = (templateName: string) => {
     const template = productTemplates.find(t => t.name === templateName);
@@ -186,16 +193,24 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Depósito</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={profile?.role === 'depot_manager'}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o depósito deste produto" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {depots.map(depot => (
-                        <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
-                      ))}
+                      {profile?.role === 'admin' ? (
+                        depots.map(depot => (
+                          <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value={profile?.depot_id || ''}>{profile?.depots?.name}</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />

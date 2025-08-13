@@ -6,7 +6,7 @@ import { showSuccess, showError } from '@/utils/toast';
 
 interface AppContextType {
   session: Session | null;
-  profile: Profile | null;
+  profile: (Profile & { depots: { name: string } | null }) | null;
   loading: boolean;
   cart: CartItem[];
   orders: Order[];
@@ -39,7 +39,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<(Profile & { depots: { name: string } | null }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -103,12 +103,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (session) {
         const { data, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, depots ( name )')
           .eq('id', session.user.id)
           .single();
         
         if (profileError) showError(profileError.message);
-        else setProfile(data);
+        else setProfile(data as any);
         
         await fetchInitialData(session.user.id);
       }
@@ -172,12 +172,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!session?.user) throw new Error('Usuário não logado');
     
     const updates = { id: session.user.id, ...data, updated_at: new Date().toISOString() };
-    const { error } = await supabase.from('profiles').upsert(updates).select().single();
+    const { data: updatedData, error } = await supabase.from('profiles').upsert(updates).select('*, depots(name)').single();
 
     if (error) {
       showError(error.message);
     } else {
-      setProfile(prev => ({ ...prev!, ...updates }));
+      setProfile(updatedData as any);
       showSuccess("Perfil atualizado!");
     }
   };
