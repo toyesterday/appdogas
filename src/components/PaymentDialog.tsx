@@ -11,11 +11,21 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+  DrawerDescription,
+  DrawerClose,
+} from '@/components/ui/drawer';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { showError, showSuccess } from '@/utils/toast';
 import { Order } from '@/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PaymentDialogProps {
   open: boolean;
@@ -29,6 +39,7 @@ const PaymentDialog = ({ open, onOpenChange }: PaymentDialogProps) => {
   const [paymentMethod, setPaymentMethod] = useState<Order['payment_method']>('pix');
   const [changeFor, setChangeFor] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const isMobile = useIsMobile();
 
   const handlePlaceOrder = async () => {
     setIsPlacingOrder(true);
@@ -43,47 +54,76 @@ const PaymentDialog = ({ open, onOpenChange }: PaymentDialogProps) => {
     setIsPlacingOrder(false);
   };
 
+  const FormContent = (
+    <div className="p-4 md:p-0">
+      <RadioGroup defaultValue="pix" value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as Order['payment_method'])} className="grid gap-4 py-4">
+        <Label htmlFor="pix" className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer has-[:checked]:border-red-500">
+          <RadioGroupItem value="pix" id="pix" />
+          <span className="text-2xl">📱</span>
+          <p className="font-semibold">PIX</p>
+        </Label>
+        <Label htmlFor="card" className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer has-[:checked]:border-red-500">
+          <RadioGroupItem value="card" id="card" />
+          <CreditCard className="w-6 h-6 text-blue-600" />
+          <p className="font-semibold">Cartão de Crédito/Débito</p>
+        </Label>
+        <div>
+          <Label htmlFor="money" className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer has-[:checked]:border-red-500">
+            <RadioGroupItem value="money" id="money" />
+            <span className="text-2xl">💰</span>
+            <p className="font-semibold">Dinheiro</p>
+          </Label>
+          {paymentMethod === 'money' && (
+            <div className="mt-2 pl-4">
+              <Label htmlFor="change" className="text-sm font-medium">Troco para R$ (opcional)</Label>
+              <Input
+                id="change"
+                type="number"
+                placeholder="Ex: 100"
+                value={changeFor}
+                onChange={(e) => setChangeFor(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          )}
+        </div>
+      </RadioGroup>
+    </div>
+  );
+
+  const title = 'Forma de Pagamento na Entrega';
+  const description = 'O pagamento é feito diretamente ao entregador.';
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>{title}</DrawerTitle>
+            <DrawerDescription>{description}</DrawerDescription>
+          </DrawerHeader>
+          {FormContent}
+          <DrawerFooter>
+            <Button onClick={handlePlaceOrder} className="w-full" disabled={isPlacingOrder}>
+              {isPlacingOrder ? 'Finalizando...' : 'Finalizar Pedido'}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Forma de Pagamento na Entrega</DialogTitle>
-          <DialogDescription>
-            O pagamento é feito diretamente ao entregador.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <RadioGroup defaultValue="pix" value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as Order['payment_method'])} className="grid gap-4 py-4">
-          <Label htmlFor="pix" className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer has-[:checked]:border-red-500">
-            <RadioGroupItem value="pix" id="pix" />
-            <span className="text-2xl">📱</span>
-            <p className="font-semibold">PIX</p>
-          </Label>
-          <Label htmlFor="card" className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer has-[:checked]:border-red-500">
-            <RadioGroupItem value="card" id="card" />
-            <CreditCard className="w-6 h-6 text-blue-600" />
-            <p className="font-semibold">Cartão de Crédito/Débito</p>
-          </Label>
-          <div>
-            <Label htmlFor="money" className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer has-[:checked]:border-red-500">
-              <RadioGroupItem value="money" id="money" />
-              <span className="text-2xl">💰</span>
-              <p className="font-semibold">Dinheiro</p>
-            </Label>
-            {paymentMethod === 'money' && (
-              <div className="mt-2 pl-4">
-                <Label htmlFor="change" className="text-sm font-medium">Troco para R$ (opcional)</Label>
-                <Input
-                  id="change"
-                  type="number"
-                  placeholder="Ex: 100"
-                  value={changeFor}
-                  onChange={(e) => setChangeFor(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            )}
-          </div>
-        </RadioGroup>
+        {FormContent}
         <DialogFooter>
           <Button onClick={handlePlaceOrder} className="w-full" disabled={isPlacingOrder}>
             {isPlacingOrder ? 'Finalizando...' : 'Finalizar Pedido'}

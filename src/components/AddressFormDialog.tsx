@@ -6,9 +6,11 @@ import { UserAddress } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerDescription, DrawerClose } from '@/components/ui/drawer';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const addressFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
@@ -27,6 +29,8 @@ interface AddressFormDialogProps {
 const AddressFormDialog = ({ address, open, onOpenChange }: AddressFormDialogProps) => {
   const { addAddress, updateAddress } = useApp();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMobile = useIsMobile();
+  
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressFormSchema),
     defaultValues: { name: '', address: '', is_default: false },
@@ -54,69 +58,100 @@ const AddressFormDialog = ({ address, open, onOpenChange }: AddressFormDialogPro
           is_default: values.is_default,
         });
       }
-      onOpenChange(false); // Fecha o diálogo apenas em caso de sucesso
+      onOpenChange(false);
     } catch (error) {
       console.error("Falha ao salvar endereço:", error);
-      // A notificação de erro já é exibida pelo AppContext
     } finally {
-      setIsSubmitting(false); // Garante que o estado de "salvando" seja desativado
+      setIsSubmitting(false);
     }
   };
+
+  const FormContent = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-4 px-4 md:px-0">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome (Ex: Casa, Trabalho)</FormLabel>
+                <FormControl><Input placeholder="Casa" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Endereço Completo</FormLabel>
+                <FormControl><Input placeholder="Rua, Número, Bairro, Cidade - Estado, CEP" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="is_default"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Endereço Padrão</FormLabel>
+                  <FormDescription>Usar este endereço para futuros pedidos.</FormDescription>
+                </div>
+                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+        {isMobile ? (
+          <DrawerFooter>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Salvando...' : 'Salvar Endereço'}
+            </Button>
+            <DrawerClose asChild>
+              <Button type="button" variant="outline">Cancelar</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        ) : (
+          <DialogFooter className="pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Salvando...' : 'Salvar Endereço'}
+            </Button>
+          </DialogFooter>
+        )}
+      </form>
+    </Form>
+  );
+
+  const title = address ? 'Editar Endereço' : 'Adicionar Novo Endereço';
+  const description = address ? 'Altere os detalhes do seu endereço.' : 'Preencha os detalhes do novo endereço.';
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>{title}</DrawerTitle>
+            <DrawerDescription>{description}</DrawerDescription>
+          </DrawerHeader>
+          {FormContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{address ? 'Editar Endereço' : 'Adicionar Novo Endereço'}</DialogTitle>
-          <DialogDescription>
-            {address ? 'Altere os detalhes do seu endereço.' : 'Preencha os detalhes do novo endereço.'}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome (Ex: Casa, Trabalho)</FormLabel>
-                  <FormControl><Input placeholder="Casa" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço Completo</FormLabel>
-                  <FormControl><Input placeholder="Rua, Número, Bairro, Cidade - Estado, CEP" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="is_default"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Endereço Padrão</FormLabel>
-                    <FormDescription>Usar este endereço para futuros pedidos.</FormDescription>
-                  </div>
-                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                </FormItem>
-              )}
-            />
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Salvando...' : 'Salvar Endereço'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        {FormContent}
       </DialogContent>
     </Dialog>
   );
