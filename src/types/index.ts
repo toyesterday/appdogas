@@ -71,6 +71,7 @@ export interface AppSettings {
 export interface Depot {
   id: string;
   name: string;
+  slug: string;
   address: string | null;
   phone: string | null;
   created_at: string;

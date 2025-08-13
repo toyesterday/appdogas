@@ -65,8 +65,8 @@ const DepotsAdmin = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>URL (Slug)</TableHead>
               <TableHead>Endereço</TableHead>
-              <TableHead>Telefone</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -77,8 +77,8 @@ const DepotsAdmin = () => {
               depots.map(depot => (
                 <TableRow key={depot.id}>
                   <TableCell className="font-medium">{depot.name}</TableCell>
+                  <TableCell className="font-mono">/{depot.slug}</TableCell>
                   <TableCell>{depot.address}</TableCell>
-                  <TableCell>{depot.phone}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

@@ -16,6 +16,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,11 +27,16 @@ import { showError, showSuccess } from '@/utils/toast';
 
 const depotFormSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
+  slug: z.string().min(3, { message: "O slug deve ter pelo menos 3 caracteres." })
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: "Slug inválido. Use apenas letras minúsculas, números e hífens." }),
   address: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
 });
 
 type DepotFormData = z.infer<typeof depotFormSchema>;
+
+const generateSlug = (name: string) => 
+  name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 interface DepotFormDialogProps {
   depot?: Depot | null;
@@ -45,16 +51,26 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
     resolver: zodResolver(depotFormSchema),
     defaultValues: {
       name: '',
+      slug: '',
       address: '',
       phone: '',
     },
   });
+
+  const watchedName = form.watch('name');
+
+  useEffect(() => {
+    if (!form.formState.isDirty) {
+      form.setValue('slug', generateSlug(watchedName), { shouldValidate: true });
+    }
+  }, [watchedName, form]);
 
   useEffect(() => {
     if (open) {
       if (depot) {
         form.reset({
           name: depot.name,
+          slug: depot.slug,
           address: depot.address,
           phone: depot.phone,
         });
@@ -101,6 +117,20 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
                 <FormItem>
                   <FormLabel>Nome do Depósito</FormLabel>
                   <FormControl><Input placeholder="Depósito Central" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL (Slug)</FormLabel>
+                  <FormControl><Input placeholder="deposito-central" {...field} /></FormControl>
+                  <FormDescription>
+                    Isso aparecerá na URL. Ex: seusite.com/deposito-central
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
