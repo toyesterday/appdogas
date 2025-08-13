@@ -1,20 +1,28 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Gift, XCircle } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import CartItem from '@/components/CartItem';
 import PaymentDialog from '@/components/PaymentDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const CartPage = () => {
-  const { cart, getCartTotal, selectedAddress, appSettings } = useApp();
+  const { cart, getCartTotal, selectedAddress, appSettings, loyaltyPrograms, applyLoyaltyReward, removeLoyaltyReward, appliedLoyaltyProgramId } = useApp();
   const [showPayment, setShowPayment] = useState(false);
-  const subtotal = getCartTotal();
+  
+  const { subtotal, discount, total: totalAfterDiscount } = getCartTotal();
   const threshold = appSettings?.free_shipping_threshold || 80;
-  const deliveryFee = subtotal >= threshold ? 0 : 8.00;
-  const total = subtotal + deliveryFee;
+  const deliveryFee = totalAfterDiscount >= threshold ? 0 : 8.00;
+  const total = totalAfterDiscount + deliveryFee;
   const canCheckout = !!selectedAddress;
+
+  const availableRewards = loyaltyPrograms.filter(p => 
+    p.status === 'completed' && cart.some(item => item.id === p.reward_product_id)
+  );
+
+  const appliedProgram = loyaltyPrograms.find(p => p.id === appliedLoyaltyProgramId);
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -28,6 +36,35 @@ const CartPage = () => {
         </div>
       ) : (
         <>
+          {availableRewards.length > 0 && (
+            <Card className="mb-4 bg-yellow-50 border-yellow-300">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Gift className="w-8 h-8 text-yellow-600" />
+                  <div>
+                    <h3 className="font-semibold">Você tem uma recompensa!</h3>
+                    {availableRewards.map(program => (
+                      <div key={program.id}>
+                        <p className="text-sm text-yellow-800">
+                          {program.reward_discount_percentage}% de desconto em {program.products.name}.
+                        </p>
+                        {appliedLoyaltyProgramId === program.id ? (
+                          <Button variant="link" className="p-0 h-auto text-red-600" onClick={removeLoyaltyReward}>
+                            Remover Recompensa
+                          </Button>
+                        ) : (
+                          <Button variant="link" className="p-0 h-auto text-yellow-700" onClick={() => applyLoyaltyReward(program.id)} disabled={!!appliedLoyaltyProgramId}>
+                            Aplicar no carrinho
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="space-y-4 mb-6">
             {cart.map(item => (
               <CartItem key={item.id} item={item} />
@@ -43,6 +80,12 @@ const CartPage = () => {
                 <span>Subtotal</span>
                 <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
               </div>
+              {discount > 0 && appliedProgram && (
+                <div className="flex justify-between text-green-600">
+                  <span>Desconto Fidelidade ({appliedProgram.products.name})</span>
+                  <span>- R$ {discount.toFixed(2).replace('.', ',')}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Taxa de entrega</span>
                 <span className={deliveryFee === 0 ? 'text-green-600' : ''}>

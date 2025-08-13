@@ -16,6 +16,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
+  applied_loyalty_program_id?: string | null;
 }
 
 export interface Order {
@@ -114,8 +115,10 @@ export interface LoyaltyProgram {
   current_purchases: number;
   reward_product_id: string;
   reward_discount_percentage: number;
-  status: 'active' | 'completed';
+  status: 'active' | 'completed' | 'redeemed';
   profiles: { full_name: string };
   products: { name: string };
   depots: { name: string };
+  redeemed_at?: string | null;
+  redeemed_order_id?: string | null;
 }
