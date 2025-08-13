@@ -13,7 +13,7 @@ const Navbar = () => {
   const showBackButton = location.pathname !== '/dashboard';
 
   const pageTitles: { [key: string]: string } = {
-    '/dashboard': '🔥 GásExpress',
+    '/dashboard': '🔥 AppdoGás',
     '/cart': 'Meu Carrinho',
     '/orders': 'Meus Pedidos',
     '/profile': 'Meu Perfil',
@@ -21,7 +21,7 @@ const Navbar = () => {
     '/support': 'Suporte',
   };
 
-  const title = pageTitles[location.pathname] || '🔥 GásExpress';
+  const title = pageTitles[location.pathname] || '🔥 AppdoGás';
 
   return (
     <header className="bg-red-600 text-white p-4 shadow-lg fixed top-0 w-full z-40">

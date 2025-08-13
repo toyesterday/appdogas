@@ -12,7 +12,7 @@ const LandingPage = () => {
         <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
           <div className="text-2xl font-bold text-red-600 flex items-center">
             <Flame className="w-7 h-7 mr-2" />
-            GásExpress
+            AppdoGás
           </div>
           <div className="space-x-2">
             <Button variant="ghost" asChild>
@@ -35,7 +35,7 @@ const LandingPage = () => {
               <span className="text-red-600">rápido e fácil.</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-              Peça seu botijão de gás ou galão de água em segundos e receba em minutos. A GásExpress é a solução que você precisava.
+              Peça seu botijão de gás ou galão de água em segundos e receba em minutos. O AppdoGás é a solução que você precisava.
             </p>
             <div className="mt-8">
               <Button size="lg" className="text-lg h-14 px-8 bg-red-600 hover:bg-red-700 shadow-lg transform hover:scale-105 transition-transform" asChild>
@@ -55,7 +55,7 @@ const LandingPage = () => {
       <section className="py-20">
         <div className="container mx-auto px-6">
           <AnimatedSection className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">Por que escolher a GásExpress?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Por que escolher o AppdoGás?</h2>
             <p className="text-gray-600 mt-3 text-lg">Simples, rápido e seguro. Veja as vantagens:</p>
           </AnimatedSection>
           <div className="grid md:grid-cols-3 gap-8">
@@ -219,7 +219,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-800 text-white">
         <div className="container mx-auto px-6 py-8 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} GásExpress. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} AppdoGás. Todos os direitos reservados.</p>
           <p className="mt-2 text-sm">Feito com ❤️ para facilitar sua vida.</p>
         </div>
       </footer>

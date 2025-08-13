@@ -23,7 +23,7 @@ const LoginPage = () => {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center text-2xl font-bold text-red-600">
-            🔥 GásExpress
+            🔥 AppdoGás
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -17,7 +17,7 @@ const AdminLayout = () => {
     <div className="flex min-h-screen bg-gray-100">
       <aside className="w-64 bg-white border-r flex flex-col">
         <div className="p-4 border-b">
-          <h2 className="text-xl font-bold text-red-600">Admin</h2>
+          <h2 className="text-xl font-bold text-red-600">AppdoGás Admin</h2>
         </div>
         <nav className="flex-1 p-2 space-y-1">
           {navItems.map(item => (
