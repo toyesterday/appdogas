@@ -47,11 +47,7 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/depots" element={<DepotSelectionPage />} />
-      <Route path="/login" element={!session ? <LoginPage /> : <Navigate to={
-          profile?.role === 'admin' ? '/admin' :
-          profile?.role === 'depot_manager' ? '/depot-manager' :
-          '/depots'
-        } />} />
+      <Route path="/login" element={<LoginPage />} />
 
       {/* Depot-specific Routes */}
       <Route path="/:depotSlug" element={<DepotLayout />}>
