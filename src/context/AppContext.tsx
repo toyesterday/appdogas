@@ -112,49 +112,46 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    setLoading(true);
+
     const fetchUserAndData = async (session: Session) => {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*, depots ( name )')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) throw profileError;
-      
-      setProfile(profileData as any);
-      await fetchInitialData(session.user.id);
-    };
-
-    const initializeApp = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        if (session) {
-          await fetchUserAndData(session);
-        }
-      } catch (e: any) {
-        showError(e.message || "Ocorreu um erro ao iniciar o aplicativo.");
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*, depots ( name )')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+        
+        setProfile(profileData as any);
+        await fetchInitialData(session.user.id);
+      } catch (error: any) {
+        showError(error.message);
         clearUserData();
-      } finally {
-        setLoading(false);
       }
     };
 
-    initializeApp();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
-      if (_event === 'SIGNED_IN' && session) {
-        setLoading(true);
-        try {
+      
+      // Handles page refresh
+      if (event === 'INITIAL_SESSION') {
+        if (session) {
           await fetchUserAndData(session);
-        } catch (e: any) {
-          showError(e.message || "Ocorreu um erro ao carregar seus dados.");
-          clearUserData();
-        } finally {
-          setLoading(false);
         }
-      } else if (_event === 'SIGNED_OUT') {
+        setLoading(false);
+      } 
+      // Handles manual login
+      else if (event === 'SIGNED_IN') {
+        setLoading(true);
+        if (session) {
+          await fetchUserAndData(session);
+        }
+        setLoading(false);
+      } 
+      // Handles logout
+      else if (event === 'SIGNED_OUT') {
         clearUserData();
       }
     });
