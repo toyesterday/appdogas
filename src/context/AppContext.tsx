@@ -112,26 +112,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    const fetchUserAndData = async (session: Session) => {
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*, depots ( name )')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+        
+        setProfile(profileData as any);
+        await fetchInitialData(session.user.id);
+      } catch (error: any) {
+        showError(error.message);
+        clearUserData();
+      }
+    };
+
     const initializeApp = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
-
         if (session) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*, depots ( name )')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError) throw profileError;
-          
-          setProfile(profileData as any);
-          await fetchInitialData(session.user.id);
+          await fetchUserAndData(session);
         }
-      } catch (error: any) {
-        showError(error.message);
-        clearUserData();
+      } catch (e: any) {
+        showError(e.message || "Ocorreu um erro ao iniciar o aplicativo.");
       } finally {
         setLoading(false);
       }
@@ -139,11 +146,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     initializeApp();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (_event === 'SIGNED_OUT') {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      if (_event === 'SIGNED_IN' && session) {
+        setLoading(true);
+        await fetchUserAndData(session);
+        setLoading(false);
+      } else if (_event === 'SIGNED_OUT') {
         clearUserData();
       }
-      setSession(session);
     });
 
     return () => {
