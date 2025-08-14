@@ -97,60 +97,53 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     else setLoyaltyPrograms(loyaltyRes.data as any);
   };
 
+  const clearUserData = () => {
+    setProfile(null);
+    setOrders([]);
+    setFavorites([]);
+    setChatMessages([]);
+    setNotifications([]);
+    setAppSettings(null);
+    setAddresses([]);
+    setSelectedAddress(null);
+    setLoyaltyPrograms([]);
+    setAppliedLoyaltyProgramId(null);
+    setCart([]);
+  };
+
   useEffect(() => {
-    setLoading(true);
-
-    const fetchUserAndData = async (session: Session) => {
+    const initializeApp = async () => {
       try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*, depots ( name )')
-          .eq('id', session.user.id)
-          .single();
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
 
-        if (profileError) throw profileError;
-        
-        setProfile(profileData as any);
-        await fetchInitialData(session.user.id);
+        if (session) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*, depots ( name )')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) throw profileError;
+          
+          setProfile(profileData as any);
+          await fetchInitialData(session.user.id);
+        }
       } catch (error: any) {
         showError(error.message);
-        setProfile(null);
-      }
-    };
-
-    const clearUserData = () => {
-      setProfile(null);
-      setOrders([]);
-      setFavorites([]);
-      setChatMessages([]);
-      setNotifications([]);
-      setAppSettings(null);
-      setAddresses([]);
-      setSelectedAddress(null);
-      setLoyaltyPrograms([]);
-      setAppliedLoyaltyProgramId(null);
-      setCart([]);
-    };
-
-    // Handle initial session on app load
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        await fetchUserAndData(session);
-      }
-      setLoading(false);
-    });
-
-    // Handle auth state changes (login, logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (_event === 'SIGNED_IN' && session) {
-        setLoading(true);
-        await fetchUserAndData(session);
+        clearUserData();
+      } finally {
         setLoading(false);
-      } else if (_event === 'SIGNED_OUT') {
+      }
+    };
+
+    initializeApp();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'SIGNED_OUT') {
         clearUserData();
       }
+      setSession(session);
     });
 
     return () => {
