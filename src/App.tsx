@@ -52,8 +52,8 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
 
       {/* Depot-specific Routes */}
-      <Route path="/:depotSlug" element={<DepotLayout />}>
-        <Route element={<AuthGuard><Layout /></AuthGuard>}>
+      <Route path="/:depotSlug" element={<AuthGuard><DepotLayout /></AuthGuard>}>
+        <Route element={<Layout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="orders" element={<OrdersPage />} />
