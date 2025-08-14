@@ -111,27 +111,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart([]);
   };
 
-  const fetchUserAndData = async (session: Session) => {
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*, depots ( name )')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) throw profileError;
-      
-      setProfile(profileData as any);
-      await fetchInitialData(session.user.id);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      showError("Falha ao carregar os dados do seu perfil.");
-      clearUserData();
-    }
-  };
-
   useEffect(() => {
-    setLoading(true);
+    const fetchUserAndData = async (session: Session) => {
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*, depots ( name )')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        setProfile(profileData as any);
+        await fetchInitialData(session.user.id);
+      } catch (err) {
+        console.error("Erro ao buscar dados do usuário:", err);
+        clearUserData();
+      }
+    };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
