@@ -86,6 +86,7 @@ export interface Depot {
   phone: string | null;
   created_at: string;
   logo_url: string | null;
+  next_billing_date: string | null;
 }
 
 export interface UserAddress {
