@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { showError, showSuccess } from '@/utils/toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,7 +16,7 @@ const BillingAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({ total_revenue: 0, total_commission: 0 });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('billing_cycles')
@@ -36,11 +36,11 @@ const BillingAdmin = () => {
       setSummary(summaryData);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleMarkAsPaid = async (cycleId: string) => {
     const { error } = await supabase
