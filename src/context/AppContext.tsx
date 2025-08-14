@@ -113,21 +113,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchUserAndData = async (session: Session) => {
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*, depots ( name )')
-          .eq('id', session.user.id)
-          .single();
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*, depots ( name )')
+        .eq('id', session.user.id)
+        .single();
 
-        if (profileError) throw profileError;
-        
-        setProfile(profileData as any);
-        await fetchInitialData(session.user.id);
-      } catch (error: any) {
-        showError(error.message);
-        clearUserData();
-      }
+      if (profileError) throw profileError;
+      
+      setProfile(profileData as any);
+      await fetchInitialData(session.user.id);
     };
 
     const initializeApp = async () => {
@@ -139,6 +134,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (e: any) {
         showError(e.message || "Ocorreu um erro ao iniciar o aplicativo.");
+        clearUserData();
       } finally {
         setLoading(false);
       }
@@ -150,8 +146,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       if (_event === 'SIGNED_IN' && session) {
         setLoading(true);
-        await fetchUserAndData(session);
-        setLoading(false);
+        try {
+          await fetchUserAndData(session);
+        } catch (e: any) {
+          showError(e.message || "Ocorreu um erro ao carregar seus dados.");
+          clearUserData();
+        } finally {
+          setLoading(false);
+        }
       } else if (_event === 'SIGNED_OUT') {
         clearUserData();
       }
