@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Package, ShoppingCart, ArrowLeft, Settings, Building, Users, Menu, DollarSign } from 'lucide-react';
+import { Home, ShoppingCart, ArrowLeft, Settings, Building, Users, Menu, DollarSign } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,6 @@ const NavContent = () => {
   const navItems = [
     { path: '/admin/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
-    { path: '/admin/products', icon: Package, label: 'Produtos' },
     { path: '/admin/depots', icon: Building, label: 'Depósitos' },
     { path: '/admin/users', icon: Users, label: 'Usuários' },
     { path: '/admin/billing', icon: DollarSign, label: 'Faturamento' },
