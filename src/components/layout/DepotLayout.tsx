@@ -5,9 +5,11 @@ import { Depot } from '@/types';
 import { DepotProvider } from '@/context/DepotContext';
 import NotFound from '@/pages/NotFound';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useApp } from '@/context/AppContext';
 
 const DepotLayout = () => {
   const { depotSlug } = useParams<{ depotSlug: string }>();
+  const { loading: appLoading } = useApp();
   const [depot, setDepot] = useState<Depot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -35,10 +37,12 @@ const DepotLayout = () => {
       setLoading(false);
     };
 
-    fetchDepot();
-  }, [depotSlug]);
+    if (!appLoading) {
+      fetchDepot();
+    }
+  }, [depotSlug, appLoading]);
 
-  if (loading) {
+  if (appLoading || loading) {
     return (
       <div className="p-4 max-w-4xl mx-auto space-y-4">
         <Skeleton className="h-16 w-full" />
