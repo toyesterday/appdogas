@@ -98,36 +98,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const setData = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        showError(error.message);
-        setLoading(false);
-        return;
-      }
-      
-      setSession(session);
-      if (session) {
-        const { data, error: profileError } = await supabase
-          .from('profiles')
-          .select('*, depots ( name )')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profileError) showError(profileError.message);
-        else setProfile(data as any);
-        
-        await fetchInitialData(session.user.id);
-      }
-      setLoading(false);
-    };
-
+    setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      if (_event === 'SIGNED_IN' && session) {
-         await setData();
-      }
-      if (_event === 'SIGNED_OUT') {
+      if (session) {
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*, depots ( name )')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            throw profileError;
+          }
+          
+          setProfile(profileData as any);
+          await fetchInitialData(session.user.id);
+
+        } catch (error: any) {
+          showError(error.message);
+          setProfile(null);
+        }
+      } else {
         setProfile(null);
         setOrders([]);
         setFavorites([]);
@@ -139,11 +132,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setLoyaltyPrograms([]);
         setAppliedLoyaltyProgramId(null);
       }
+      setLoading(false);
     });
 
-    setData();
-
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const addToCart = (product: Product) => {
