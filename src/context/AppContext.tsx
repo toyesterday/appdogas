@@ -115,42 +115,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
 
     const fetchUserAndData = async (session: Session) => {
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*, depots ( name )')
-          .eq('id', session.user.id)
-          .single();
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*, depots ( name )')
+        .eq('id', session.user.id)
+        .single();
 
-        if (profileError) throw profileError;
-        
-        setProfile(profileData as any);
-        await fetchInitialData(session.user.id);
-      } catch (error: any) {
-        showError(error.message);
-        clearUserData();
-      }
+      if (profileError) throw profileError;
+      
+      setProfile(profileData as any);
+      await fetchInitialData(session.user.id);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       
-      // Handles page refresh
       if (event === 'INITIAL_SESSION') {
-        if (session) {
-          await fetchUserAndData(session);
+        try {
+          if (session) {
+            await fetchUserAndData(session);
+          }
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       } 
-      // Handles manual login
       else if (event === 'SIGNED_IN') {
         setLoading(true);
-        if (session) {
-          await fetchUserAndData(session);
+        try {
+          if (session) {
+            await fetchUserAndData(session);
+          }
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       } 
-      // Handles logout
       else if (event === 'SIGNED_OUT') {
         clearUserData();
       }
