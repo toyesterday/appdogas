@@ -4,58 +4,37 @@ import { showError, showSuccess } from '@/utils/toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, formatDistanceToNow, differenceInDays, isToday, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
-import { Depot } from '@/types';
+import { BillingCycle } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-
-interface DepotBilling {
-  depot_id: string;
-  depot_name: string;
-  total_revenue: number;
-  commission_amount: number;
-}
-
-type DepotWithBilling = Pick<Depot, 'id' | 'name' | 'next_billing_date'>;
+import { DollarSign, CheckCircle, Clock } from 'lucide-react';
 
 const BillingAdmin = () => {
-  const [billingData, setBillingData] = useState<DepotBilling[]>([]);
-  const [depots, setDepots] = useState<DepotWithBilling[]>([]);
+  const [cycles, setCycles] = useState<BillingCycle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [commissionRate, setCommissionRate] = useState<string | null>(null);
-
-  const currentMonth = format(new Date(), 'MMMM de yyyy', { locale: ptBR });
+  const [summary, setSummary] = useState({ total_revenue: 0, total_commission: 0 });
 
   const fetchData = async () => {
     setLoading(true);
-    const [billingRes, depotsRes, rateRes] = await Promise.all([
-      supabase.rpc('get_all_depots_monthly_revenue'),
-      supabase.from('depots').select('id, name, next_billing_date').order('next_billing_date'),
-      supabase.from('app_settings').select('value').eq('key', 'commission_rate').single()
-    ]);
+    const { data, error } = await supabase
+      .from('billing_cycles')
+      .select('*, depots(name)')
+      .order('end_date', { ascending: false });
 
-    if (billingRes.error) showError('Falha ao carregar dados de faturamento.');
-    else setBillingData(billingRes.data || []);
-
-    if (depotsRes.error) showError('Falha ao carregar depósitos.');
-    else setDepots(depotsRes.data || []);
-
-    if (rateRes.error) setCommissionRate('5.99');
-    else setCommissionRate(rateRes.data.value);
-
+    if (error) {
+      showError('Falha ao carregar histórico de faturamento.');
+      console.error(error);
+    } else {
+      setCycles(data as any[]);
+      const summaryData = data.reduce((acc, cycle) => {
+        acc.total_revenue += cycle.total_revenue;
+        acc.total_commission += cycle.commission_amount;
+        return acc;
+      }, { total_revenue: 0, total_commission: 0 });
+      setSummary(summaryData);
+    }
     setLoading(false);
   };
 
@@ -63,23 +42,16 @@ const BillingAdmin = () => {
     fetchData();
   }, []);
 
-  const getBillingStatus = (dateStr: string | null) => {
-    if (!dateStr) return { text: 'Não definido', variant: 'secondary' as const };
-    const date = new Date(dateStr);
-    const daysDiff = differenceInDays(date, new Date());
+  const handleMarkAsPaid = async (cycleId: string) => {
+    const { error } = await supabase
+      .from('billing_cycles')
+      .update({ status: 'paid', paid_at: new Date().toISOString() })
+      .eq('id', cycleId);
 
-    if (isPast(date) && !isToday(date)) return { text: `Vencido há ${formatDistanceToNow(date, { locale: ptBR })}`, variant: 'destructive' as const };
-    if (isToday(date)) return { text: 'Vence hoje', variant: 'destructive' as const };
-    if (daysDiff <= 7) return { text: `Vence em ${daysDiff + 1} dias`, variant: 'default' as const, className: 'bg-yellow-500 text-white' };
-    return { text: `Vence em ${format(date, 'dd/MM/yyyy')}`, variant: 'secondary' as const };
-  };
-
-  const handleMarkAsBilled = async (depotId: string) => {
-    const { error } = await supabase.rpc('reset_billing_cycle', { depot_id_param: depotId });
     if (error) {
-      showError('Falha ao reiniciar ciclo de faturamento.');
+      showError('Falha ao marcar como pago.');
     } else {
-      showSuccess('Ciclo de faturamento reiniciado com sucesso!');
+      showSuccess('Fatura marcada como paga!');
       fetchData();
     }
   };
@@ -88,122 +60,97 @@ const BillingAdmin = () => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const getStatusBadge = (status: BillingCycle['status']) => {
+    switch (status) {
+      case 'paid':
+        return <Badge variant="outline" className="text-green-600 border-green-600"><CheckCircle className="w-3 h-3 mr-1" /> Pago</Badge>;
+      case 'pending':
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Pendente</Badge>;
+      case 'overdue':
+        return <Badge variant="destructive">Atrasado</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Faturamento e Comissões</h1>
+      <h1 className="text-3xl font-bold mb-6">Histórico de Faturamento</h1>
+      
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Receita Total (Geral)</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{formatCurrency(summary.total_revenue)}</div>}
+            <p className="text-xs text-muted-foreground">Soma de todos os ciclos de faturamento.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Comissão Total (Geral)</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-red-600">{formatCurrency(summary.total_commission)}</div>}
+            <p className="text-xs text-muted-foreground">Soma de todas as comissões geradas.</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card className="mb-8">
+      <Card>
         <CardHeader>
-          <CardTitle>Controle de Ciclo de Faturamento</CardTitle>
-          <CardDescription>Acompanhe os vencimentos e reinicie o ciclo de cobrança para cada depósito.</CardDescription>
+          <CardTitle>Ciclos de Faturamento</CardTitle>
+          <CardDescription>
+            O histórico de todas as faturas geradas para os depósitos.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Depósito</TableHead>
-                <TableHead>Próximo Vencimento</TableHead>
+                <TableHead>Período</TableHead>
+                <TableHead className="text-right">Receita</TableHead>
+                <TableHead className="text-right">Comissão</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                [...Array(2)].map((_, i) => (
+                [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-8 w-32 ml-auto" /></TableCell>
+                    <TableCell colSpan={6}><Skeleton className="h-6 w-full" /></TableCell>
                   </TableRow>
                 ))
-              ) : depots.length === 0 ? (
-                <TableRow><TableCell colSpan={3} className="text-center h-24">Nenhum depósito encontrado.</TableCell></TableRow>
+              ) : cycles.length === 0 ? (
+                <TableRow><TableCell colSpan={6} className="text-center h-24">Nenhum ciclo de faturamento encontrado.</TableCell></TableRow>
               ) : (
-                depots.map(depot => {
-                  const status = getBillingStatus(depot.next_billing_date);
-                  return (
-                    <TableRow key={depot.id}>
-                      <TableCell className="font-medium">{depot.name}</TableCell>
-                      <TableCell><Badge variant={status.variant} className={status.className}>{status.text}</Badge></TableCell>
-                      <TableCell className="text-right">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm">Marcar como Cobrado</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar Cobrança?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta ação irá reiniciar o ciclo de faturamento para o depósito "{depot.name}". A próxima data de cobrança será definida para daqui a um mês.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleMarkAsBilled(depot.id)}>
-                                Confirmar e Reiniciar Ciclo
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
+                cycles.map(cycle => (
+                  <TableRow key={cycle.id}>
+                    <TableCell className="font-medium">{cycle.depots.name}</TableCell>
+                    <TableCell>{format(new Date(cycle.start_date), 'dd/MM/yy', { locale: ptBR })} - {format(new Date(cycle.end_date), 'dd/MM/yy', { locale: ptBR })}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(cycle.total_revenue)}</TableCell>
+                    <TableCell className="text-right font-bold text-red-600">{formatCurrency(cycle.commission_amount)}</TableCell>
+                    <TableCell>{getStatusBadge(cycle.status)}</TableCell>
+                    <TableCell className="text-right">
+                      {cycle.status === 'pending' && (
+                        <Button size="sm" onClick={() => handleMarkAsPaid(cycle.id)}>Marcar como Pago</Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo Mensal dos Depósitos</CardTitle>
-          <CardDescription>
-            Faturamento e comissão a ser cobrada para o mês de <span className="font-semibold capitalize">{currentMonth}</span>.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-white rounded-lg shadow overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Depósito</TableHead>
-                  <TableHead className="text-right">Faturamento do Mês</TableHead>
-                  <TableHead className="text-right">Comissão ({commissionRate || '5.99'}%)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  [...Array(3)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : billingData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center h-24">
-                      Nenhum dado de faturamento para este mês.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  billingData.map(depot => (
-                    <TableRow key={depot.depot_id}>
-                      <TableCell className="font-medium">{depot.depot_name}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(depot.total_revenue)}</TableCell>
-                      <TableCell className="text-right font-bold text-red-600">{formatCurrency(depot.commission_amount)}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="mt-4 text-sm text-gray-500 space-y-1">
-            <p>* O faturamento é calculado com base nos pedidos com status diferente de 'Cancelado'.</p>
-            <p>* A taxa de comissão pode ser alterada na página de <Link to="/admin/settings" className="underline hover:text-red-600">Configurações</Link>.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <p className="text-sm text-gray-500 mt-4">
+        Nota: Os ciclos de faturamento são gerados e atualizados automaticamente pelo sistema.
+      </p>
     </div>
   );
 };

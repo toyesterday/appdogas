@@ -86,7 +86,6 @@ export interface Depot {
   phone: string | null;
   created_at: string;
   logo_url: string | null;
-  next_billing_date: string | null;
 }
 
 export interface UserAddress {
@@ -122,4 +121,18 @@ export interface LoyaltyProgram {
   depots: { name: string };
   redeemed_at?: string | null;
   redeemed_order_id?: string | null;
+}
+
+export interface BillingCycle {
+  id: string;
+  depot_id: string;
+  start_date: string;
+  end_date: string;
+  total_revenue: number;
+  commission_rate: number;
+  commission_amount: number;
+  status: 'pending' | 'paid' | 'overdue';
+  paid_at: string | null;
+  created_at: string;
+  depots: { name: string };
 }
