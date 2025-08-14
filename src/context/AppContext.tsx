@@ -112,46 +112,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchUserAndData = async (session: Session) => {
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*, depots ( name )')
-      .eq('id', session.user.id)
-      .single();
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*, depots ( name )')
+        .eq('id', session.user.id)
+        .single();
 
-    if (profileError) throw profileError;
-    
-    setProfile(profileData as any);
-    await fetchInitialData(session.user.id);
+      if (profileError) throw profileError;
+      
+      setProfile(profileData as any);
+      await fetchInitialData(session.user.id);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      showError("Falha ao carregar os dados do seu perfil.");
+      clearUserData();
+    }
   };
 
   useEffect(() => {
-    // 1. Handle Initial Page Load / Refresh
-    const initializeApp = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        if (session) {
-          await fetchUserAndData(session);
-        }
-      } catch (error) {
-        console.error("Error during app initialization:", error);
-        clearUserData();
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
 
-    initializeApp();
-
-    // 2. Listen for subsequent auth changes (manual login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setSession(session);
+      setSession(session);
+      if (session) {
         await fetchUserAndData(session);
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null);
+      } else {
         clearUserData();
       }
+      setLoading(false);
     });
 
     return () => {
