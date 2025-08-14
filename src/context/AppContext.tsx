@@ -99,40 +99,58 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     setLoading(true);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+
+    const fetchUserAndData = async (session: Session) => {
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*, depots ( name )')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+        
+        setProfile(profileData as any);
+        await fetchInitialData(session.user.id);
+      } catch (error: any) {
+        showError(error.message);
+        setProfile(null);
+      }
+    };
+
+    const clearUserData = () => {
+      setProfile(null);
+      setOrders([]);
+      setFavorites([]);
+      setChatMessages([]);
+      setNotifications([]);
+      setAppSettings(null);
+      setAddresses([]);
+      setSelectedAddress(null);
+      setLoyaltyPrograms([]);
+      setAppliedLoyaltyProgramId(null);
+      setCart([]);
+    };
+
+    // Handle initial session on app load
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session) {
-        try {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*, depots ( name )')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError) {
-            throw profileError;
-          }
-          
-          setProfile(profileData as any);
-          await fetchInitialData(session.user.id);
-
-        } catch (error: any) {
-          showError(error.message);
-          setProfile(null);
-        }
-      } else {
-        setProfile(null);
-        setOrders([]);
-        setFavorites([]);
-        setChatMessages([]);
-        setNotifications([]);
-        setAppSettings(null);
-        setAddresses([]);
-        setSelectedAddress(null);
-        setLoyaltyPrograms([]);
-        setAppliedLoyaltyProgramId(null);
+        await fetchUserAndData(session);
       }
       setLoading(false);
+    });
+
+    // Handle auth state changes (login, logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      if (_event === 'SIGNED_IN' && session) {
+        setLoading(true);
+        await fetchUserAndData(session);
+        setLoading(false);
+      } else if (_event === 'SIGNED_OUT') {
+        clearUserData();
+      }
     });
 
     return () => {
@@ -358,7 +376,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setCart([]);
   };
 
   const addAddress = async (address: Omit<UserAddress, 'id' | 'user_id' | 'created_at'>) => {
