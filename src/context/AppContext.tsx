@@ -69,7 +69,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('loyalty_programs').select('*, products(name), depots(name)').eq('user_id', userId),
     ]);
 
-    if (profileRes.error) throw profileRes.error;
+    // Handle profile fetch: It's okay if a profile doesn't exist, don't treat it as a fatal error.
+    // PGRST116 is the error code for "Exact one row not found" from .single()
+    if (profileRes.error && profileRes.error.code !== 'PGRST116') {
+      throw profileRes.error;
+    }
     setProfile(profileRes.data as any);
 
     if (ordersRes.data) setOrders(ordersRes.data as Order[]);
