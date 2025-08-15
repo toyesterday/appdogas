@@ -69,8 +69,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('loyalty_programs').select('*, products(name), depots(name)').eq('user_id', userId),
     ]);
 
-    // Handle profile fetch: It's okay if a profile doesn't exist, don't treat it as a fatal error.
-    // PGRST116 is the error code for "Exact one row not found" from .single()
     if (profileRes.error && profileRes.error.code !== 'PGRST116') {
       throw profileRes.error;
     }
@@ -112,20 +110,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
+    const initializeSession = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
         if (session) {
           await fetchInitialData(session.user.id);
-        } else {
-          clearUserData();
         }
       } catch (error) {
-        console.error("Falha crítica ao buscar dados do usuário:", error);
-        showError("Não foi possível carregar seus dados.");
-        clearUserData();
+        console.error("Erro ao inicializar a sessão:", error);
+        showError("Ocorreu um erro ao verificar sua autenticação.");
       } finally {
         setLoading(false);
+      }
+    };
+
+    initializeSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      if (event === 'SIGNED_IN' && session) {
+        setLoading(true);
+        await fetchInitialData(session.user.id);
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        clearUserData();
       }
     });
 
