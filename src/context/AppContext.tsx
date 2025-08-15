@@ -131,8 +131,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       if (event === 'SIGNED_IN' && session) {
         setLoading(true);
-        await fetchInitialData(session.user.id);
-        setLoading(false);
+        try {
+          await fetchInitialData(session.user.id);
+        } catch (error) {
+          console.error("Falha ao buscar dados após SIGNED_IN:", error);
+          showError("Não foi possível carregar seus dados de usuário.");
+          clearUserData();
+        } finally {
+          setLoading(false);
+        }
       } else if (event === 'SIGNED_OUT') {
         clearUserData();
       }
