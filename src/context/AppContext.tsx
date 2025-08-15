@@ -114,16 +114,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Effect 1: Handle session loading and changes
   useEffect(() => {
-    console.log('[AppContext] Effect 1: Initializing session check.');
     setSessionLoading(true);
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[AppContext] getSession() completed. Session:', session);
       setSession(session);
       setSessionLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`[AppContext] onAuthStateChange event: ${event}. Session:`, session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setSessionLoading(false);
     });
@@ -133,15 +130,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Effect 2: Fetch user data when session is available
   useEffect(() => {
-    console.log(`[AppContext] Effect 2 triggered. sessionLoading: ${sessionLoading}`);
     if (sessionLoading) {
-      console.log('[AppContext] Effect 2: Aborting because session is still loading.');
       return;
     }
 
     const fetchUserAndData = async () => {
       if (session) {
-        console.log('[AppContext] Effect 2: Session found. Fetching user data...');
         setDataLoading(true);
         try {
           const { data: profileData, error: profileError } = await supabase
@@ -154,7 +148,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
           setProfile(profileData as any);
           await fetchInitialData(session.user.id);
-          console.log('[AppContext] Effect 2: User data fetched successfully.');
         } catch (error) {
           console.error("Error fetching user data:", error);
           showError("Não foi possível carregar seus dados.");
@@ -163,7 +156,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setDataLoading(false);
         }
       } else {
-        console.log('[AppContext] Effect 2: No session found. Clearing user data.');
         clearUserData();
       }
     };
