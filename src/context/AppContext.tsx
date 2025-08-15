@@ -112,32 +112,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const fetchUserAndData = async (session: Session) => {
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*, depots ( name )')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        setProfile(profileData as any);
-        await fetchInitialData(session.user.id);
-      } catch (err) {
-        console.error("Erro ao buscar dados do usuário:", err);
-        clearUserData();
-      }
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // DIAGNOSTIC STEP: Isolate authentication from data fetching.
+    // We will only check for a session and immediately stop loading.
+    // We will NOT fetch any user data for this test.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      if (session) {
-        await fetchUserAndData(session);
-      } else {
-        clearUserData();
-      }
-      setLoading(false);
+      setLoading(false); // The crucial part of the test.
     });
 
     return () => {
