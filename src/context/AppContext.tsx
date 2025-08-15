@@ -46,8 +46,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<(Profile & { depots: { name: string } | null }) | null>(null);
-  const [sessionLoading, setSessionLoading] = useState(true);
-  const [dataLoading, setDataLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Começa carregando
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -60,7 +59,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [appliedLoyaltyProgramId, setAppliedLoyaltyProgramId] = useState<string | null>(null);
 
   const fetchInitialData = async (userId: string) => {
-    const [ordersRes, favoritesRes, notificationsRes, settingsRes, addressesRes, loyaltyRes] = await Promise.all([
+    const [profileRes, ordersRes, favoritesRes, notificationsRes, settingsRes, addressesRes, loyaltyRes] = await Promise.all([
+      supabase.from('profiles').select('*, depots ( name )').eq('id', userId).single(),
       supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('favorites').select('product_id').eq('user_id', userId),
       supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
@@ -69,14 +69,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('loyalty_programs').select('*, products(name), depots(name)').eq('user_id', userId),
     ]);
 
-    if (ordersRes.error) console.error('Error fetching orders:', ordersRes.error);
-    else setOrders(ordersRes.data as Order[]);
+    if (profileRes.error) throw profileRes.error;
+    setProfile(profileRes.data as any);
 
-    if (favoritesRes.error) console.error('Error fetching favorites:', favoritesRes.error);
-    else setFavorites(favoritesRes.data.map(fav => fav.product_id));
-
-    if (notificationsRes.error) console.error('Error fetching notifications:', notificationsRes.error);
-    else setNotifications(notificationsRes.data as Notification[]);
+    if (ordersRes.data) setOrders(ordersRes.data as Order[]);
+    if (favoritesRes.data) setFavorites(favoritesRes.data.map(fav => fav.product_id));
+    if (notificationsRes.data) setNotifications(notificationsRes.data as Notification[]);
+    if (loyaltyRes.data) setLoyaltyPrograms(loyaltyRes.data as any);
 
     if (settingsRes.data) {
       const settings = settingsRes.data.reduce((acc, { key, value }) => {
@@ -86,16 +85,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setAppSettings(settings);
     }
 
-    if (addressesRes.error) console.error('Error fetching addresses:', addressesRes.error);
-    else {
+    if (addressesRes.data) {
       const fetchedAddresses = addressesRes.data as UserAddress[];
       setAddresses(fetchedAddresses);
       const defaultAddress = fetchedAddresses.find(a => a.is_default) || fetchedAddresses[0] || null;
       setSelectedAddress(defaultAddress);
     }
-
-    if (loyaltyRes.error) console.error('Error fetching loyalty programs:', loyaltyRes.error);
-    else setLoyaltyPrograms(loyaltyRes.data as any);
   };
 
   const clearUserData = () => {
@@ -112,64 +107,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart([]);
   };
 
-  // Effect 1: Handle session loading and changes
   useEffect(() => {
-    console.log('[AppContext] Effect 1: Initializing session check.');
-    setSessionLoading(true);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[AppContext] getSession() completed. Session:', session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`[AUTH EVENT]: ${event}`, session);
       setSession(session);
-      setSessionLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`[AppContext] onAuthStateChange event: ${event}. Session:`, session);
-      setSession(session);
-      setSessionLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Effect 2: Fetch user data when session is available
-  useEffect(() => {
-    console.log(`[AppContext] Effect 2 triggered. sessionLoading: ${sessionLoading}`);
-    if (sessionLoading) {
-      console.log('[AppContext] Effect 2: Aborting because session is still loading.');
-      return;
-    }
-
-    const fetchUserAndData = async () => {
       if (session) {
-        console.log('[AppContext] Effect 2: Session found. Fetching user data...');
-        setDataLoading(true);
         try {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*, depots ( name )')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError) throw profileError;
-
-          setProfile(profileData as any);
           await fetchInitialData(session.user.id);
-          console.log('[AppContext] Effect 2: User data fetched successfully.');
         } catch (error) {
-          console.error("Error fetching user data:", error);
+          console.error("Falha ao buscar dados do usuário:", error);
           showError("Não foi possível carregar seus dados.");
           clearUserData();
-        } finally {
-          setDataLoading(false);
         }
       } else {
-        console.log('[AppContext] Effect 2: No session found. Clearing user data.');
         clearUserData();
       }
-    };
+      setLoading(false);
+    });
 
-    fetchUserAndData();
-  }, [session, sessionLoading]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -441,7 +400,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
-    session, profile, loading: sessionLoading || dataLoading, cart, orders, favorites, notifications, chatMessages, appSettings,
+    session, profile, loading, cart, orders, favorites, notifications, chatMessages, appSettings,
     addresses, selectedAddress, loyaltyPrograms, appliedLoyaltyProgramId,
     addToCart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount,
     placeOrder, toggleFavorite, isFavorite, updateProfile, markNotificationAsRead,
