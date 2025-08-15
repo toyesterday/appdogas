@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider, useApp } from "@/context/AppContext";
 import Layout from "@/components/layout/Layout";
 import Dashboard from "@/pages/Dashboard";
@@ -95,9 +95,7 @@ const AppRoutes = () => {
 const App = () => (
   <AppProvider>
     <Toaster richColors position="top-center" />
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <AppRoutes />
   </AppProvider>
 );
 

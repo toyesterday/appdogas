@@ -109,7 +109,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`[AUTH EVENT]: ${event}`, session);
       setSession(session);
       if (session) {
         try {
