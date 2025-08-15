@@ -59,7 +59,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [appliedLoyaltyProgramId, setAppliedLoyaltyProgramId] = useState<string | null>(null);
 
   const fetchInitialData = async (userId: string) => {
-    console.log('[AppContext] Fetching all user data...');
     const [profileRes, ordersRes, favoritesRes, notificationsRes, settingsRes, addressesRes, loyaltyRes] = await Promise.all([
       supabase.from('profiles').select('*, depots ( name )').eq('id', userId).single(),
       supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
@@ -92,11 +91,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const defaultAddress = fetchedAddresses.find(a => a.is_default) || fetchedAddresses[0] || null;
       setSelectedAddress(defaultAddress);
     }
-    console.log('[AppContext] User data fetch complete.');
   };
 
   const clearUserData = () => {
-    console.log('[AppContext] Clearing user data.');
     setProfile(null);
     setOrders([]);
     setFavorites([]);
@@ -112,7 +109,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`[AUTH EVENT]: ${event}`, session);
       setSession(session);
       try {
         if (session) {
@@ -125,7 +121,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         showError("Não foi possível carregar seus dados.");
         clearUserData();
       } finally {
-        console.log('[AUTH EVENT] Finalizing, setting loading to false.');
         setLoading(false);
       }
     });
