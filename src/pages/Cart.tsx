@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ShoppingCart, Gift, XCircle } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import CartItem from '@/components/CartItem';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 const CartPage = () => {
   const { cart, getCartTotal, selectedAddress, appSettings, loyaltyPrograms, applyLoyaltyReward, removeLoyaltyReward, appliedLoyaltyProgramId } = useApp();
   const [showPayment, setShowPayment] = useState(false);
+  const { depotSlug } = useParams<{ depotSlug: string }>();
   
   const { subtotal, discount, total: totalAfterDiscount } = getCartTotal();
   const threshold = appSettings?.free_shipping_threshold || 80;
@@ -31,7 +32,7 @@ const CartPage = () => {
           <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Seu carrinho está vazio</p>
           <Button asChild>
-            <Link to="/dashboard">Ver Produtos</Link>
+            <Link to={`/${depotSlug}/dashboard`}>Ver Produtos</Link>
           </Button>
         </div>
       ) : (

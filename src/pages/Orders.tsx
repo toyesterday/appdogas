@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import OrderCard from '@/components/OrderCard';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 
 const OrdersPage = () => {
   const { orders } = useApp();
+  const { depotSlug } = useParams<{ depotSlug: string }>();
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -14,7 +15,7 @@ const OrdersPage = () => {
           <Truck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Você ainda não fez nenhum pedido</p>
           <Button asChild>
-            <Link to="/dashboard">Fazer Primeiro Pedido</Link>
+            <Link to={`/${depotSlug}/dashboard`}>Fazer Primeiro Pedido</Link>
           </Button>
         </div>
       ) : (
