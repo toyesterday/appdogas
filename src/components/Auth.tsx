@@ -1,5 +1,5 @@
-import { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Skeleton } from './ui/skeleton';
 
@@ -9,15 +9,10 @@ interface AuthGuardProps {
 
 const AuthGuard = ({ children }: AuthGuardProps) => {
   const { session, loading } = useApp();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !session) {
-      navigate('/login');
-    }
-  }, [session, loading, navigate]);
-
-  if (loading || !session) {
+  // 1. Primeiro, esperamos o estado de 'loading' do AppContext terminar.
+  //    Isso garante que já tentamos buscar a sessão.
+  if (loading) {
     return (
        <div className="p-4 max-w-4xl mx-auto space-y-4">
         <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg h-24" />
@@ -38,6 +33,13 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
+  // 2. Apenas depois que o carregamento terminar, verificamos se a sessão existe.
+  //    Se não existir, redirecionamos para o login.
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // 3. Se o carregamento terminou e a sessão existe, renderizamos a página protegida.
   return <>{children}</>;
 };
 
