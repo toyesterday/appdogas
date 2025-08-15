@@ -68,13 +68,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('loyalty_programs').select('*, products(name), depots(name)').eq('user_id', userId),
     ]);
 
-    if (ordersRes.error) showError('Não foi possível carregar seus pedidos.');
+    if (ordersRes.error) console.error('Error fetching orders:', ordersRes.error);
     else setOrders(ordersRes.data as Order[]);
 
-    if (favoritesRes.error) showError('Não foi possível carregar seus favoritos.');
+    if (favoritesRes.error) console.error('Error fetching favorites:', favoritesRes.error);
     else setFavorites(favoritesRes.data.map(fav => fav.product_id));
 
-    if (notificationsRes.error) showError('Não foi possível carregar as notificações.');
+    if (notificationsRes.error) console.error('Error fetching notifications:', notificationsRes.error);
     else setNotifications(notificationsRes.data as Notification[]);
 
     if (settingsRes.data) {
@@ -85,7 +85,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setAppSettings(settings);
     }
 
-    if (addressesRes.error) showError('Não foi possível carregar seus endereços.');
+    if (addressesRes.error) console.error('Error fetching addresses:', addressesRes.error);
     else {
       const fetchedAddresses = addressesRes.data as UserAddress[];
       setAddresses(fetchedAddresses);
@@ -93,7 +93,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setSelectedAddress(defaultAddress);
     }
 
-    if (loyaltyRes.error) showError('Não foi possível carregar programas de fidelidade.');
+    if (loyaltyRes.error) console.error('Error fetching loyalty programs:', loyaltyRes.error);
     else setLoyaltyPrograms(loyaltyRes.data as any);
   };
 
@@ -112,12 +112,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // DIAGNOSTIC STEP: Isolate authentication from data fetching.
-    // We will only check for a session and immediately stop loading.
-    // We will NOT fetch any user data for this test.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setLoading(false); // The crucial part of the test.
+    const fetchUserAndData = async (session: Session) => {
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*, depots ( name )')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        setProfile(profileData as any);
+        await fetchInitialData(session.user.id);
+      } catch (err) {
+        console.error("Erro ao buscar dados do usuário:", err);
+        showError("Não foi possível carregar seus dados. Tente novamente.");
+        clearUserData();
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      try {
+        setSession(session);
+        if (session) {
+          await fetchUserAndData(session);
+        } else {
+          clearUserData();
+        }
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => {
