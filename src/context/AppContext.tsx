@@ -113,6 +113,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Effect 1: Handle auth state changes from Supabase
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
