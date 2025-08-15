@@ -46,7 +46,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<(Profile & { depots: { name: string } | null }) | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -111,23 +112,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart([]);
   };
 
-  // Effect 1: Handle auth state changes from Supabase
+  // Effect 1: Handle session loading and changes
   useEffect(() => {
+    setSessionLoading(true);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setSessionLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setSessionLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Effect 2: Fetch data when session is available, and manage loading state
+  // Effect 2: Fetch user data when session is available
   useEffect(() => {
+    if (sessionLoading) return; // Wait until the session is loaded
+
     const fetchUserAndData = async () => {
       if (session) {
+        setDataLoading(true);
         try {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -144,16 +151,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           showError("Não foi possível carregar seus dados.");
           clearUserData();
         } finally {
-          setLoading(false);
+          setDataLoading(false);
         }
       } else {
         clearUserData();
-        setLoading(false);
       }
     };
 
     fetchUserAndData();
-  }, [session]);
+  }, [session, sessionLoading]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -425,7 +431,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
-    session, profile, loading, cart, orders, favorites, notifications, chatMessages, appSettings,
+    session, profile, loading: sessionLoading || dataLoading, cart, orders, favorites, notifications, chatMessages, appSettings,
     addresses, selectedAddress, loyaltyPrograms, appliedLoyaltyProgramId,
     addToCart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount,
     placeOrder, toggleFavorite, isFavorite, updateProfile, markNotificationAsRead,
