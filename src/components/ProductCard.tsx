@@ -35,33 +35,33 @@ const ProductCard = ({ product }: ProductCardProps) => {
       </Button>
       
       <CardContent className="p-4">
-        <div className="flex items-start space-x-4">
-          <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
+          <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
             {product.image && product.image.startsWith('/') ? (
               <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
             ) : (
-              <span className="text-4xl">{product.image}</span>
+              <span className="text-5xl">{product.image}</span>
             )}
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-lg">{product.name}</h3>
             <p className="text-gray-600 text-sm mb-2">{product.description}</p>
-            <div className="flex items-center space-x-1 mb-2">
+            <div className="flex items-center justify-center sm:justify-start space-x-1 mb-3">
               <Star className="w-4 h-4 text-yellow-500 fill-current" />
               <span className="text-sm text-gray-600">{product.rating} ({product.reviews} avaliações)</span>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               <div>
-                {product.originalPrice && (
+                {product.original_price && (
                   <span className="text-sm text-gray-500 line-through mr-2">
-                    R$ {product.originalPrice.toFixed(2).replace('.', ',')}
+                    R$ {product.original_price.toFixed(2).replace('.', ',')}
                   </span>
                 )}
                 <span className="text-2xl font-bold text-red-600">
                   R$ {product.price.toFixed(2).replace('.', ',')}
                 </span>
               </div>
-              <Button onClick={() => addToCart(product)}>
+              <Button onClick={() => addToCart(product)} className="w-full sm:w-auto">
                 Adicionar
               </Button>
             </div>

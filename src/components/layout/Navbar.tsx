@@ -1,27 +1,40 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { MapPin, Bell, ShoppingCart, ArrowLeft, Shield } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { useDepot } from '@/context/DepotContext';
 import { Badge } from '@/components/ui/badge';
 
 const Navbar = () => {
   const { getCartItemCount, getUnreadNotificationCount, profile } = useApp();
+  const { depot } = useDepot();
   const location = useLocation();
   const navigate = useNavigate();
+  const { depotSlug } = useParams<{ depotSlug: string }>();
+
   const cartItemCount = getCartItemCount();
   const unreadCount = getUnreadNotificationCount();
 
-  const showBackButton = location.pathname !== '/';
+  const isDashboard = location.pathname === `/${depotSlug}/dashboard`;
+  const showBackButton = !isDashboard;
 
-  const pageTitles: { [key: string]: string } = {
-    '/': '🔥 GásExpress',
-    '/cart': 'Meu Carrinho',
-    '/orders': 'Meus Pedidos',
-    '/profile': 'Meu Perfil',
-    '/notifications': 'Notificações',
-    '/support': 'Suporte',
+  const getPageTitle = () => {
+    const path = location.pathname.replace(`/${depotSlug}`, '');
+    switch (path) {
+      case '/dashboard': return depot.name;
+      case '/cart': return 'Meu Carrinho';
+      case '/orders': return 'Meus Pedidos';
+      case '/profile': return 'Meu Perfil';
+      case '/notifications': return 'Notificações';
+      case '/support': return 'Suporte';
+      case '/favorites': return 'Meus Favoritos';
+      case '/addresses': return 'Meus Endereços';
+      default:
+        if (path.startsWith('/orders/')) return 'Detalhes do Pedido';
+        return depot.name;
+    }
   };
 
-  const title = pageTitles[location.pathname] || '🔥 GásExpress';
+  const title = getPageTitle();
 
   return (
     <header className="bg-red-600 text-white p-4 shadow-lg fixed top-0 w-full z-40">
@@ -33,25 +46,21 @@ const Navbar = () => {
               onClick={() => navigate(-1)}
             />
           )}
-          <h1 className="text-xl font-bold">{title}</h1>
+          <h1 className="text-xl font-bold truncate">{title}</h1>
         </div>
         <div className="flex items-center space-x-4">
           {profile?.role === 'admin' && (
-            <Link to="/admin/dashboard" title="Painel Admin">
+            <Link to="/admin" title="Painel Admin">
               <Shield className="w-6 h-6 cursor-pointer" />
             </Link>
           )}
-          <div className="hidden sm:flex items-center space-x-1">
-            <MapPin className="w-4 h-4" />
-            <span className="text-sm">Contagem, MG</span>
-          </div>
-          <Link to="/notifications" className="relative">
+          <Link to={`/${depotSlug}/notifications`} className="relative">
             <Bell className="w-6 h-6 cursor-pointer" />
             {unreadCount > 0 && (
               <Badge variant="destructive" className="absolute -top-2 -right-2 px-1.5 py-0.5 h-5 w-5 justify-center text-xs">{unreadCount}</Badge>
             )}
           </Link>
-          <Link to="/cart" className="relative">
+          <Link to={`/${depotSlug}/cart`} className="relative">
             <ShoppingCart className="w-6 h-6 cursor-pointer" />
             {cartItemCount > 0 && (
               <Badge variant="destructive" className="absolute -top-2 -right-2 px-1.5 py-0.5 h-5 w-5 justify-center text-xs">{cartItemCount}</Badge>

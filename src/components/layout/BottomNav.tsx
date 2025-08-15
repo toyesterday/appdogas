@@ -1,18 +1,19 @@
-import { NavLink } from 'react-router-dom';
-import { Home, MessageCircle, ShoppingCart, Truck, User } from 'lucide-react';
+import { NavLink, useParams } from 'react-router-dom';
+import { Home, Heart, ShoppingCart, Truck, User } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 
 const BottomNav = () => {
   const { getCartItemCount } = useApp();
+  const { depotSlug } = useParams<{ depotSlug: string }>();
   const cartItemCount = getCartItemCount();
 
   const navItems = [
-    { path: '/support', icon: MessageCircle, label: 'Suporte' },
-    { path: '/', icon: Home, label: 'Início' },
-    { path: '/cart', icon: ShoppingCart, label: 'Carrinho', badge: cartItemCount },
-    { path: '/orders', icon: Truck, label: 'Pedidos' },
-    { path: '/profile', icon: User, label: 'Perfil' },
+    { path: `/${depotSlug}/dashboard`, icon: Home, label: 'Início' },
+    { path: `/${depotSlug}/favorites`, icon: Heart, label: 'Favoritos' },
+    { path: `/${depotSlug}/cart`, icon: ShoppingCart, label: 'Carrinho', badge: cartItemCount },
+    { path: `/${depotSlug}/orders`, icon: Truck, label: 'Pedidos' },
+    { path: `/${depotSlug}/profile`, icon: User, label: 'Perfil' },
   ];
 
   const activeClass = "text-red-600";
@@ -25,7 +26,7 @@ const BottomNav = () => {
           <NavLink
             key={item.path}
             to={item.path}
-            end
+            end={item.path.endsWith('/dashboard')}
             className={({ isActive }) => `flex flex-col items-center p-2 relative ${isActive ? activeClass : inactiveClass}`}
           >
             <item.icon className="w-5 h-5" />

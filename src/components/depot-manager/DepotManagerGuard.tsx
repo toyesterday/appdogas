@@ -18,7 +18,7 @@ const DepotManagerGuard = ({ children }: DepotManagerGuardProps) => {
     );
   }
 
-  if (profile?.role !== 'depot_manager') {
+  if (profile?.role !== 'depot_manager' || !profile.depot_id) {
     return <Navigate to="/" replace />;
   }
 

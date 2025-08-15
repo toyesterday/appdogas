@@ -16,6 +16,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,11 +27,17 @@ import { showError, showSuccess } from '@/utils/toast';
 
 const depotFormSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
+  slug: z.string().min(3, { message: "O slug deve ter pelo menos 3 caracteres." })
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: "Slug inválido. Use apenas letras minúsculas, números e hífens." }),
   address: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
+  logo_url: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().nullable(),
 });
 
 type DepotFormData = z.infer<typeof depotFormSchema>;
+
+const generateSlug = (name: string) => 
+  name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 interface DepotFormDialogProps {
   depot?: Depot | null;
@@ -45,18 +52,30 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
     resolver: zodResolver(depotFormSchema),
     defaultValues: {
       name: '',
+      slug: '',
       address: '',
       phone: '',
+      logo_url: '',
     },
   });
+
+  const watchedName = form.watch('name');
+
+  useEffect(() => {
+    if (!form.formState.isDirty) {
+      form.setValue('slug', generateSlug(watchedName), { shouldValidate: true });
+    }
+  }, [watchedName, form]);
 
   useEffect(() => {
     if (open) {
       if (depot) {
         form.reset({
           name: depot.name,
+          slug: depot.slug,
           address: depot.address,
           phone: depot.phone,
+          logo_url: depot.logo_url,
         });
       } else {
         form.reset(form.formState.defaultValues);
@@ -107,6 +126,20 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
             />
             <FormField
               control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL (Slug)</FormLabel>
+                  <FormControl><Input placeholder="deposito-central" {...field} /></FormControl>
+                  <FormDescription>
+                    Isso aparecerá na URL. Ex: seusite.com/deposito-central
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="address"
               render={({ field }) => (
                 <FormItem>
@@ -123,6 +156,20 @@ const DepotFormDialog = ({ depot, open, onOpenChange, onSuccess }: DepotFormDial
                 <FormItem>
                   <FormLabel>Telefone</FormLabel>
                   <FormControl><Input placeholder="(31) 99999-9999" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="logo_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL do Logo</FormLabel>
+                  <FormControl><Input placeholder="https://example.com/logo.png" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormDescription>
+                    Opcional. A imagem que representa o depósito.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

@@ -1,29 +1,33 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useApp } from '@/context/AppContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { session, profile } = useApp();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (session && profile) {
+      const target =
+        profile.role === 'admin'
+          ? '/admin'
+          : profile.role === 'depot_manager'
+          ? '/depot-manager'
+          : '/depots';
+      navigate(target, { replace: true });
+    }
+  }, [session, profile, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center text-2xl font-bold text-red-600">
-            🔥 GásExpress
+            🔥 AppdoGás
           </CardTitle>
         </CardHeader>
         <CardContent>
