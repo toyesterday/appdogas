@@ -111,43 +111,45 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart([]);
   };
 
+  // Effect 1: Handle auth state changes from Supabase
   useEffect(() => {
-    const fetchUserAndData = async (session: Session) => {
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*, depots ( name )')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        setProfile(profileData as any);
-        await fetchInitialData(session.user.id);
-      } catch (err) {
-        console.error("Erro ao buscar dados do usuário:", err);
-        showError("Não foi possível carregar seus dados. Tente novamente.");
-        clearUserData();
-      }
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        setSession(session);
-        if (session) {
-          await fetchUserAndData(session);
-        } else {
-          clearUserData();
-        }
-      } finally {
-        setLoading(false);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Effect 2: Fetch data when session is available, and manage loading state
+  useEffect(() => {
+    const fetchUserAndData = async () => {
+      if (session) {
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*, depots ( name )')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) throw profileError;
+
+          setProfile(profileData as any);
+          await fetchInitialData(session.user.id);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          showError("Não foi possível carregar seus dados.");
+          clearUserData();
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        clearUserData();
+        setLoading(false);
+      }
+    };
+
+    fetchUserAndData();
+  }, [session]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
