@@ -14,7 +14,7 @@ const OrdersPage = () => {
           <Truck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Você ainda não fez nenhum pedido</p>
           <Button asChild>
-            <Link to="/dashboard">Fazer Primeiro Pedido</Link>
+            <Link to="/">Fazer Primeiro Pedido</Link>
           </Button>
         </div>
       ) : (

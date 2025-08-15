@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Order } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,11 +26,10 @@ const getStatusText = (status: Order['status']) => {
 };
 
 const OrderCard = ({ order }: OrderCardProps) => {
-  const { depotSlug } = useParams<{ depotSlug: string }>();
   const orderTimestamp = new Date(order.created_at);
 
   return (
-    <Link to={`/${depotSlug}/orders/${order.id}`}>
+    <Link to={`/orders/${order.id}`}>
       <Card className="hover:bg-gray-50 transition-colors">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">Pedido #{order.id.toString().slice(-6)}</CardTitle>

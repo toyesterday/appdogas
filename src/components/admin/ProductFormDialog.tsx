@@ -3,8 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
-import { Product, Depot } from '@/types';
-import { useApp } from '@/context/AppContext';
+import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,16 +25,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showError, showSuccess } from '@/utils/toast';
 
 const productFormSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
-  depot_id: z.string().uuid({ message: "Por favor, selecione um depósito." }),
   brand: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }),
-  original_price: z.coerce.number().positive({ message: "O preço original deve ser um número positivo." }).optional().nullable(),
+  originalPrice: z.coerce.number().positive({ message: "O preço original deve ser um número positivo." }).optional().nullable(),
   image: z.string().optional().nullable(),
   promotion: z.string().optional().nullable(),
   featured: z.boolean().default(false),
@@ -50,37 +47,8 @@ interface ProductFormDialogProps {
   onSuccess: () => void;
 }
 
-const productTemplates = [
-  {
-    name: 'Gás de Cozinha P13',
-    brand: 'Supergásbras',
-    description: 'O botijão ideal para sua casa. Qualidade e segurança garantidas.',
-    image: '/images/gas-13kg.png',
-  },
-  {
-    name: 'Água Mineral 20L',
-    brand: 'Fonte Pura',
-    description: 'Água pura e cristalina para matar sua sede. Galão retornável.',
-    image: '/images/agua.png',
-  },
-  {
-    name: 'Gás Industrial P20',
-    brand: 'Supergásbras',
-    description: 'Ideal para empilhadeiras e uso industrial.',
-    image: '/images/gas-20kg.png',
-  },
-  {
-    name: 'Gás Industrial P45',
-    brand: 'Supergásbras',
-    description: 'Para comércios e condomínios com alto consumo.',
-    image: '/images/gas-45kg.png',
-  },
-];
-
 const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFormDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [depots, setDepots] = useState<Depot[]>([]);
-  const { profile } = useApp();
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -88,7 +56,7 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
       brand: '',
       description: '',
       price: 0,
-      original_price: undefined,
+      originalPrice: undefined,
       image: '',
       promotion: '',
       featured: false,
@@ -96,44 +64,23 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
   });
 
   useEffect(() => {
-    const fetchDepots = async () => {
-      const { data, error } = await supabase.from('depots').select('id, name');
-      if (error) {
-        showError("Não foi possível carregar os depósitos.");
-      } else {
-        setDepots(data as Depot[]);
-      }
-    };
-    if (profile?.role === 'admin') {
-      fetchDepots();
-    }
-  }, [profile]);
-
-  useEffect(() => {
     if (open) {
       if (product) {
         form.reset({
-          ...product,
-          depot_id: product.depot_id || undefined,
+          name: product.name,
+          brand: product.brand,
+          description: product.description,
+          price: product.price,
+          originalPrice: product.originalPrice,
+          image: product.image,
+          promotion: product.promotion,
+          featured: !!product.featured,
         });
       } else {
         form.reset(form.formState.defaultValues);
-        if (profile?.role === 'depot_manager' && profile.depot_id) {
-          form.setValue('depot_id', profile.depot_id);
-        }
       }
     }
-  }, [product, open, form, profile]);
-
-  const handleTemplateChange = (templateName: string) => {
-    const template = productTemplates.find(t => t.name === templateName);
-    if (template) {
-      form.setValue('name', template.name, { shouldValidate: true });
-      form.setValue('brand', template.brand);
-      form.setValue('description', template.description);
-      form.setValue('image', template.image);
-    }
-  };
+  }, [product, open, form]);
 
   const onSubmit = async (values: ProductFormData) => {
     setIsSubmitting(true);
@@ -165,58 +112,6 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
-            {!product && (
-              <FormItem>
-                <FormLabel>Modelo de Produto (Opcional)</FormLabel>
-                <Select onValueChange={handleTemplateChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um modelo para preencher" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {productTemplates.map(template => (
-                      <SelectItem key={template.name} value={template.name}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Escolher um modelo preencherá os campos automaticamente.
-                </FormDescription>
-              </FormItem>
-            )}
-            <FormField
-              control={form.control}
-              name="depot_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Depósito</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={profile?.role === 'depot_manager'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o depósito deste produto" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {profile?.role === 'admin' ? (
-                        depots.map(depot => (
-                          <SelectItem key={depot.id} value={depot.id}>{depot.name}</SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value={profile?.depot_id || ''}>{profile?.depots?.name}</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="name"
@@ -252,7 +147,7 @@ const ProductFormDialog = ({ product, open, onOpenChange, onSuccess }: ProductFo
             />
             <FormField
               control={form.control}
-              name="original_price"
+              name="originalPrice"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Preço Original (Opcional)</FormLabel>

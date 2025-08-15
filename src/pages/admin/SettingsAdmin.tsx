@@ -5,16 +5,14 @@ import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { showError, showSuccess } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const settingsFormSchema = z.object({
   free_shipping_threshold: z.coerce.number().positive("O valor deve ser positivo."),
   free_shipping_banner_text: z.string().min(1, "O texto não pode estar vazio."),
-  commission_rate: z.coerce.number().min(0, "A taxa não pode ser negativa.").max(100, "A taxa não pode ser maior que 100."),
 });
 
 type SettingsFormData = z.infer<typeof settingsFormSchema>;
@@ -38,9 +36,8 @@ const SettingsAdmin = () => {
           return acc;
         }, {} as { [key: string]: string });
         form.reset({
-          free_shipping_threshold: parseFloat(settings.free_shipping_threshold || '0'),
-          free_shipping_banner_text: settings.free_shipping_banner_text || '',
-          commission_rate: parseFloat(settings.commission_rate || '5.99'),
+          free_shipping_threshold: parseFloat(settings.free_shipping_threshold),
+          free_shipping_banner_text: settings.free_shipping_banner_text,
         });
       }
       setLoading(false);
@@ -53,7 +50,6 @@ const SettingsAdmin = () => {
     const updates = [
       { key: 'free_shipping_threshold', value: values.free_shipping_threshold.toString() },
       { key: 'free_shipping_banner_text', value: values.free_shipping_banner_text },
-      { key: 'commission_rate', value: values.commission_rate.toString() },
     ];
 
     const { error } = await supabase.from('app_settings').upsert(updates);
@@ -89,81 +85,51 @@ const SettingsAdmin = () => {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Configurações</h1>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Tabs defaultValue="shipping">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="shipping">Frete Grátis</TabsTrigger>
-              <TabsTrigger value="billing">Faturamento</TabsTrigger>
-            </TabsList>
-            <TabsContent value="shipping">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Promoção de Frete Grátis</CardTitle>
-                  <CardDescription>
-                    Gerencie o banner e as regras para a promoção de frete grátis.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="free_shipping_banner_text"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Texto do Banner</FormLabel>
-                        <FormControl><Input {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="free_shipping_threshold"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Valor Mínimo para Frete Grátis (R$)</FormLabel>
-                        <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="billing">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Comissão do Sistema</CardTitle>
-                  <CardDescription>
-                    Defina a taxa de comissão a ser cobrada sobre o faturamento dos depósitos.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="commission_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Taxa de Comissão (%)</FormLabel>
-                        <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                        <FormDescription>
-                          Este é o percentual que será usado para calcular sua receita.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-          <div className="flex justify-end mt-6">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Salvando...' : 'Salvar Todas as Alterações'}
-            </Button>
-          </div>
-        </form>
-      </Form>
+      <Card>
+        <CardHeader>
+          <CardTitle>Promoção de Frete Grátis</CardTitle>
+          <CardDescription>
+            Gerencie o banner e as regras para a promoção de frete grátis.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="free_shipping_banner_text"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Texto do Banner</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="free_shipping_threshold"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor Mínimo para Frete Grátis (R$)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

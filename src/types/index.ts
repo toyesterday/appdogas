@@ -2,7 +2,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  original_price: number | null;
+  originalPrice: number | null;
   image: string | null;
   description: string | null;
   brand: string | null;
@@ -16,7 +16,6 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
-  applied_loyalty_program_id?: string | null;
 }
 
 export interface Order {
@@ -25,9 +24,7 @@ export interface Order {
   items: CartItem[];
   total: number;
   address: string;
-  status: 'preparing' | 'delivering' | 'delivered' | 'canceled';
-  payment_method: 'pix' | 'card' | 'money';
-  change_for?: string | null;
+  status: 'preparing' | 'delivering' | 'delivered';
   created_at: string;
   estimated_time: string;
   depot_id?: string | null;
@@ -45,23 +42,16 @@ export interface Notification {
 export interface ChatMessage {
   id: string;
   user_id: string;
-  depot_id: string;
   message: string;
   sender: 'user' | 'support';
   created_at: string;
-}
-
-export interface Conversation {
-  user_id: string;
-  full_name: string;
-  last_message: string;
-  last_message_at: string;
 }
 
 export interface Profile {
   id: string;
   full_name?: string;
   avatar_url?: string;
+  address?: string;
   updated_at?: string;
   role?: 'user' | 'admin' | 'depot_manager';
   depot_id?: string | null;
@@ -81,58 +71,7 @@ export interface AppSettings {
 export interface Depot {
   id: string;
   name: string;
-  slug: string;
   address: string | null;
   phone: string | null;
   created_at: string;
-  logo_url: string | null;
-}
-
-export interface UserAddress {
-  id: string;
-  user_id: string;
-  name: string;
-  address: string;
-  is_default: boolean;
-  created_at: string;
-}
-
-export interface ProductReview {
-  id: string;
-  product_id: string;
-  user_id: string;
-  order_id: string;
-  rating: number;
-  comment?: string;
-  created_at: string;
-}
-
-export interface LoyaltyProgram {
-  id: string;
-  user_id: string;
-  depot_id: string;
-  target_purchases: number;
-  current_purchases: number;
-  reward_product_id: string;
-  reward_discount_percentage: number;
-  status: 'active' | 'completed' | 'redeemed';
-  profiles: { full_name: string };
-  products: { name: string };
-  depots: { name: string };
-  redeemed_at?: string | null;
-  redeemed_order_id?: string | null;
-}
-
-export interface BillingCycle {
-  id: string;
-  depot_id: string;
-  start_date: string;
-  end_date: string;
-  total_revenue: number;
-  commission_rate: number;
-  commission_amount: number;
-  status: 'pending' | 'paid' | 'overdue';
-  paid_at: string | null;
-  created_at: string;
-  depots: { name: string };
 }

@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { ReactNode, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Skeleton } from './ui/skeleton';
 
@@ -9,8 +9,15 @@ interface AuthGuardProps {
 
 const AuthGuard = ({ children }: AuthGuardProps) => {
   const { session, loading } = useApp();
+  const navigate = useNavigate();
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate('/login');
+    }
+  }, [session, loading, navigate]);
+
+  if (loading || !session) {
     return (
        <div className="p-4 max-w-4xl mx-auto space-y-4">
         <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg h-24" />
@@ -29,10 +36,6 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
         </div>
       </div>
     );
-  }
-
-  if (!session) {
-    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

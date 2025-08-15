@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useApp } from '@/context/AppContext';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,24 +8,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { showError, showSuccess } from '@/utils/toast';
 import ProductFormDialog from '@/components/admin/ProductFormDialog';
 
-const DepotManagerProducts = () => {
+const ProductsAdmin = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const { profile } = useApp();
 
   const fetchProducts = async () => {
-    if (!profile?.depot_id) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('depot_id', profile.depot_id)
-      .order('name');
-      
+    const { data, error } = await supabase.from('products').select('*').order('name');
     if (error) {
       showError('Falha ao carregar produtos.');
+      console.error('Error fetching products:', error);
     } else {
       setProducts(data);
     }
@@ -34,10 +27,8 @@ const DepotManagerProducts = () => {
   };
 
   useEffect(() => {
-    if (profile?.depot_id) {
-      fetchProducts();
-    }
-  }, [profile]);
+    fetchProducts();
+  }, []);
 
   const handleDelete = async (productId: string) => {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
@@ -62,14 +53,14 @@ const DepotManagerProducts = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold">Gerenciar Produtos</h1>
-        <Button onClick={handleAddNew} className="w-full sm:w-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Gerenciar Produtos</h1>
+        <Button onClick={handleAddNew}>
           <PlusCircle className="w-4 h-4 mr-2" />
           Adicionar Produto
         </Button>
       </div>
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
+      <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
             <TableRow>
@@ -86,9 +77,9 @@ const DepotManagerProducts = () => {
             ) : (
               products.map(product => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium whitespace-nowrap">{product.name}</TableCell>
-                  <TableCell className="whitespace-nowrap">{product.brand}</TableCell>
-                  <TableCell className="whitespace-nowrap">R$ {product.price.toFixed(2).replace('.', ',')}</TableCell>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.brand}</TableCell>
+                  <TableCell>R$ {product.price.toFixed(2).replace('.', ',')}</TableCell>
                   <TableCell>{product.featured ? 'Sim' : 'Não'}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -121,4 +112,4 @@ const DepotManagerProducts = () => {
   );
 };
 
-export default DepotManagerProducts;
+export default ProductsAdmin;

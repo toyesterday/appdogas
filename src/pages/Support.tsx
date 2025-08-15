@@ -1,22 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { useDepot } from '@/context/DepotContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react';
 
 const SupportPage = () => {
-  const { chatMessages, sendMessage, fetchChatMessages } = useApp();
-  const { depot } = useDepot();
+  const { chatMessages, sendMessage } = useApp();
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (depot.id) {
-      fetchChatMessages(depot.id);
-    }
-  }, [depot.id, fetchChatMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -29,7 +21,7 @@ const SupportPage = () => {
       setIsSending(true);
       const messageToSend = newMessage;
       setNewMessage('');
-      await sendMessage(messageToSend, depot.id);
+      await sendMessage(messageToSend);
       setIsSending(false);
     }
   };
