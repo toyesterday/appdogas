@@ -111,50 +111,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart([]);
   };
 
-  const fetchUserAndData = async (session: Session) => {
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*, depots ( name )')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      setProfile(profileData as any);
-      await fetchInitialData(session.user.id);
-    } catch (err) {
-      console.error("Erro ao buscar dados do usuário:", err);
-      clearUserData();
-    }
-  };
-
   useEffect(() => {
-    const initializeApp = async () => {
+    const fetchUserAndData = async (session: Session) => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        if (session) {
-          await fetchUserAndData(session);
-        }
-      } catch (error) {
-        console.error("Error during app initialization:", error);
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*, depots ( name )')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        setProfile(profileData as any);
+        await fetchInitialData(session.user.id);
+      } catch (err) {
+        console.error("Erro ao buscar dados do usuário:", err);
         clearUserData();
-      } finally {
-        setLoading(false);
       }
     };
 
-    initializeApp();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setSession(session);
+      setSession(session);
+      if (session) {
         await fetchUserAndData(session);
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null);
+      } else {
         clearUserData();
       }
+      setLoading(false);
     });
 
     return () => {
